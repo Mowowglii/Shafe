@@ -18,9 +18,18 @@ repositories {
 }
 
 dependencies {
+	// Spring Web App tools
 	implementation("org.springframework.boot:spring-boot-starter-webmvc")
+	
+	// Spring for live WebRTC signaling channel handling 
+	implementation("org.springframework.boot:spring-boot-starter-websocket")
+	
 	testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+	
+	// Clean code
+	compileOnly("org.projectlombok:lombok")
+	annotationProcessor("org.projectlombok:lombok")
 }
 
 tasks.withType<Test> {
