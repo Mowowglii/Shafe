@@ -1,4 +1,4 @@
-package com.nixxrazcorp.shafe;
+package com.nixxrazcorp.shafe.InitWebRTC;
 
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
