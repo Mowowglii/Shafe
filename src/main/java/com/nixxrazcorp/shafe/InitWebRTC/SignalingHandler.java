@@ -26,6 +26,8 @@ public class SignalingHandler extends TextWebSocketHandler{
 
             rooms.computeIfAbsent(roomId, k -> new CopyOnWriteArrayList<>())
             .addIfAbsent(session);
+        } else {
+            System.err.println("Error in Query");
         }
     }
 
@@ -53,7 +55,7 @@ public class SignalingHandler extends TextWebSocketHandler{
                 try {
                     webSocketSession.sendMessage(message);
                 } catch (IOException e){
-                    // Couldn't send message to the client2
+                    System.err.println("Couldn't send message : " + e.getMessage());
                 }
             }
         }
