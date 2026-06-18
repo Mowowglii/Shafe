@@ -15,6 +15,11 @@ import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
+import com.nixxrazcorp.shafe.InitWebRTC.SignalingHandler;
+import com.nixxrazcorp.shafe.data.SigMessage;
+
+import tools.jackson.databind.ObjectMapper;
+
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class SignalingIntegrationTest {
@@ -27,7 +32,7 @@ public class SignalingIntegrationTest {
         String url = "ws://localhost:"+port+"/signal";
         String roomParam = "?roomId=room-123";
 
-        BlockingQueue<String> client2ReceivedMessages = new ArrayBlockingQueue<>(1);
+        BlockingQueue<TextMessage> client2ReceivedMessages = new ArrayBlockingQueue<>(1);
 
         StandardWebSocketClient client = new StandardWebSocketClient();
 
@@ -35,7 +40,7 @@ public class SignalingIntegrationTest {
             @Override
             protected void handleTextMessage(WebSocketSession session, TextMessage message) {
                 // When Client 2 gets a message, push it to our queue so the test thread can see it
-                client2ReceivedMessages.add(message.getPayload());
+                client2ReceivedMessages.add(message);
             }
         }, url + roomParam).get(2, TimeUnit.SECONDS);
 
@@ -43,15 +48,15 @@ public class SignalingIntegrationTest {
         .get(2, TimeUnit.SECONDS);
 
         // 5. Client 1 sends the message to the Spring Server
-        client1Session.sendMessage(new TextMessage("payload"));
+        client1Session.sendMessage(new SigMessage("offer", "payload").toTextMessage());
 
         // 6. Assert that Client 2 received the exact message within 3 seconds
-        String receivedJson = client2ReceivedMessages.poll(3, TimeUnit.SECONDS);
+        TextMessage receivedJson = client2ReceivedMessages.poll(3, TimeUnit.SECONDS);
         
         assertNotNull(receivedJson);
         
         // Deserialize it back to verify the content matches
-        TextMessage receivedMessage = new TextMessage(receivedJson);
+        SigMessage receivedMessage = new ObjectMapper().readValue(receivedJson.getPayload(), SigMessage.class);
         assertEquals("payload", receivedMessage.getPayload());
 
         // Clean up connections
