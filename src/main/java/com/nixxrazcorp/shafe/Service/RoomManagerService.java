@@ -1,9 +1,12 @@
 package com.nixxrazcorp.shafe.Service;
 
+import com.nixxrazcorp.shafe.data.FTSession;
 import com.nixxrazcorp.shafe.data.Room;
 import org.springframework.stereotype.Service;
 import org.springframework.web.socket.WebSocketSession;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
@@ -39,4 +42,27 @@ public class RoomManagerService {
             }
         }
     }
+
+    public List<WebSocketSession> getOtherActiveSessions(String roomId, WebSocketSession ws){
+        if (ws == null){
+            return null;
+        }
+
+        Room room = this.getRoom(roomId);
+        if (room == null){
+            return null;
+        }
+        
+        ArrayList<WebSocketSession> listOfWs = new ArrayList<>();
+        List<FTSession> listOfSessions = room.getSessions();
+
+        for (FTSession session : listOfSessions){
+            if (session.isActive() && !session.getWsSession().equals(ws)){
+                listOfWs.add(session.getWsSession());
+            }
+        }
+
+        return listOfWs;
+    }
+
 }
