@@ -58,10 +58,16 @@ public final class Room{
                 return false;
             }
 
+            if (ws == null){
+                return false;
+            }
+
+            // Retrieve eventual sleeping session
+            FTSession session = this.findSleepingSession();
+
             // Check if a sleeping session could be replaced
             if (this.sleepingCounter > 0){
                 // Replace the sleeping session
-                FTSession session = this.findSleepingSession();
                 session.setWsSession(ws);
                 session.setCreatedAt(LocalDateTime.now());
                 session.setActive(true);
@@ -69,7 +75,7 @@ public final class Room{
                 // Decrement sleepingcounter because of replacement
                 this.sleepingCounter -= 1;
             } else { // Naturally Add the Session
-                FTSession session = new FTSession(
+                session = new FTSession(
                     ws,
                     LocalDateTime.now(),
                     true
@@ -90,6 +96,10 @@ public final class Room{
     public boolean deleteSession(WebSocketSession ws){
         lock.writeLock().lock();
         try{
+            if (ws == null){
+                return false;
+            }
+
             FTSession sessionToDelete = this.findSessionByWs(ws);
             if (sessionToDelete != null && sessionToDelete.isActive()){
                 sessionToDelete.setActive(false);
