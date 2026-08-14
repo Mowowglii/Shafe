@@ -15,8 +15,8 @@ import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
-import com.nixxrazcorp.shafe.InitWebRTC.SignalingHandler;
-import com.nixxrazcorp.shafe.data.SigMessage;
+import com.nixxrazcorp.shafe.WebSocket.SignalingHandler;
+import com.nixxrazcorp.shafe.dto.SigMessage;
 
 import tools.jackson.databind.ObjectMapper;
 
