@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
     // File Layout
-    "rootDir": "./src/main/frontend/ts",
+    "rootDir": "src/main/webapp/ts",
     "outDir": "./src/main/resources/static/js",
 
     // Environment Settings
