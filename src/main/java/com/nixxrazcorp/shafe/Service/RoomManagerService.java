@@ -13,7 +13,7 @@ public class RoomManagerService {
 
     public boolean tryRegisterRoom(String roomId) {
         Room room = new Room(DEFAULT_CAPACITY);
-        return activeRooms.putIfAbsent(roomId, room) == null;
+        return activeRooms.putIfAbsent(roomId, room) == null; // Room created if and only if roomId is unique
     }
 
     public Room getRoom(String roomId) {
