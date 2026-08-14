@@ -12,7 +12,6 @@ public final class Room{
 
     private ArrayList<FTSession> sessionList = new ArrayList<FTSession>();
     private boolean isFull = false;
-    private String roomID;
     private int capacity;    
     private boolean isAsleep = true;
     private int activeCounter = 0;
@@ -21,18 +20,8 @@ public final class Room{
     public Room(){
     }
 
-    public Room(int max_size, String id){
-        this.roomID = id;
+    public Room(int max_size){
         this.capacity = max_size;
-    }
-
-    public String getRoomId(){
-        lock.readLock().lock();
-        try {
-            return this.roomID;
-        } finally {
-            lock.readLock().unlock();
-        }
     }
 
     public List<FTSession> getSessions(){
