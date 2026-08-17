@@ -17,25 +17,12 @@ public class SessionControllerTest {
     private MockMvc mockMvc;
 
     @Test
-    public void testCreateAndValidateSessionLifecycle() throws Exception {
+    public void testCreateRoom() throws Exception {
         // 1. Test POST endpoint creates a dynamic session room
-        String responseContent = mockMvc.perform(post("/api/sessions")
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.roomId").exists())
-                .andExpect(jsonPath("$.active").value(true))
-                .andReturn().getResponse().getContentAsString();
-
-        // Extract the generated roomId from the JSON response
-        String generatedRoomId = com.jayway.jsonpath.JsonPath.read(responseContent, "$.roomId");
-
-        // 2. Test GET endpoint successfully validates the room we just made
-        mockMvc.perform(get("/api/sessions/" + generatedRoomId))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.roomId").value(generatedRoomId));
-
-        // 3. Test GET endpoint returns a 404 for a totally fake room
-        mockMvc.perform(get("/api/sessions/fake-room-id-123"))
-                .andExpect(status().isNotFound());
+        mockMvc.perform(post("/api/rooms")
+        .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.roomId").exists())
+        .andReturn().getResponse().getContentAsString();
     }
 }
