@@ -58,6 +58,8 @@ public class SignalingHandler extends TextWebSocketHandler{
                     roomManagerService.leaveRoom(roomId, ws);
                 }
             }
+        } else {
+            System.err.println("Error in query");
         }
     }
 
