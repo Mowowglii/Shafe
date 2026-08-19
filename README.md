@@ -69,7 +69,7 @@ shafe/
 
 ├── webapp/          # Code TypeScript (signaling P2P)
 
-├── ressources/      # Assets compilés (destination tsconfig.json)
+├── ressources/      # Assets transpilés (destination tsconfig.json)
 
 └── Makefile         # Orchestration de la compilation
 
