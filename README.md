@@ -77,7 +77,7 @@ shafe/
 
 ## 📋 Roadmap
 
-- [ ] **Finaliser le backend** — Consolidation WebSocket + salles de signalement (en cours)
+- [x] **Finaliser le backend** — Consolidation WebSocket + salles de signalement (en cours)
 - [ ] **Intégrer WebRTC** — Implémenter RTCPeerConnection pour la communication P2P
 - [ ] **Tester le transfert de fichiers** — Valider la transmission P2P de bout en bout
 - [ ] **Frontend** — Interface utilisateur pour créer/rejoindre des salles
