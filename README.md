@@ -3,11 +3,11 @@
 Une application web de transfert de fichiers **privé et décentralisé**, sans serveur centralisé. 
 Shafe explore une architecture distribuée basée sur WebRTC pour établir des connexions pair-à-pair sécurisées.
 
-⚠️ **État : En développement actif** — Backend en consolidation
+**État : En développement actif** — Backend en consolidation
 
 ---
 
-## 📊 État du projet
+## État du projet
 
 - ✅ **Backend (SpringBoot)** : WebSocket configuré, gestion des salles de signalement en consolidation
 - ⏳ **Communication P2P** : TypeScript + WebRTC (RTCPeerConnection) — à intégrer après stabilisation du backend
@@ -18,7 +18,7 @@ Shafe explore une architecture distribuée basée sur WebRTC pour établir des c
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 Shafe fonctionne en deux phases :
 
@@ -35,7 +35,7 @@ Shafe fonctionne en deux phases :
 
 ---
 
-## 🛠️ Stack technique
+## Stack technique
 
 | Composant | Technologie |
 |-----------|-------------|
@@ -46,7 +46,7 @@ Shafe fonctionne en deux phases :
 
 ---
 
-## 🚀 Installation & Setup
+## Installation & Setup
 
 ### Prérequis
 - Java 25
@@ -75,7 +75,7 @@ shafe/
 
 ---
 
-## 📋 Roadmap
+## Roadmap
 
 - [x] **Finaliser le backend** — Consolidation WebSocket + salles de signalement (en cours)
 - [ ] **Intégrer WebRTC** — Implémenter RTCPeerConnection pour la communication P2P
@@ -86,7 +86,7 @@ shafe/
 
 ---
 
-## 🎓 Apprentissages
+## Apprentissages
 
 Ce projet est une opportunité d'explorer des technologies modernes et des concepts clés :
 
