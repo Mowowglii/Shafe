@@ -101,7 +101,7 @@ cd server
 
 > Le serveur de signalement démarrera sur http://localhost:8080.
 
-### 2. Compiler le client
+### 2. Transpiler le client
 
 ```bash
 cd client
