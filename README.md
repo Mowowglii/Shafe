@@ -10,8 +10,8 @@ Etat : En développement actif - Structuration du client et consolidation du bac
 
 * Backend (Spring Boot) : WebSocket configuré, API REST de gestion des salles, tests d'intégration et unitaires en place.
 * Client (TypeScript & WebRTC) : Module de signalement, gestion des RTCPeerConnection et du RTCDataChannel en cours de finalisation.
-* Frontend / UI : Interface utilisateur basique en intégration dans le client.
-* Transfert P2P : Validation de la transmission de fichiers de bout en bout.
+* Frontend / UI : Interface utilisateur basique.
+* Transfert P2P : En cours...
 
 ---
 
