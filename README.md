@@ -20,8 +20,10 @@ Etat : En développement actif - Structuration du client et consolidation du bac
 Shafe fonctionne en deux phases distinctes :
 
 1. Création de salle & Signalement (REST API + WebSocket)
-   * Le client crée ou rejoint une salle via l'API REST du serveur Spring Boot.
-   * La connexion WebSocket est établie pour échanger les métadonnées du signaling (offres, réponses SDP, candidats ICE).
+   * Un client crée une salle via l'API REST du serveur Spring Boot, récupère l'id de sa salle (réponse à la requête de l'API REST) et rejoint la salle en se connectant au WebSocket du serveur (avec l'id).
+   * Un client disposant de l'id d'une salle peut la rejoindre via le serveur de signalement.
+   * La connexion WebSocket est établie pour échanger les métadonnées du signalement (offres, réponses SDP, candidats ICE).
+   * Un client reçoit le rôle d'« initiator » (fourni par le serveur) et entame le signalement WebRTC.
 2. Transfert P2P (WebRTC DataChannel)
    * Une fois le signaling terminé, la connexion P2P est établie directement entre les deux navigateurs.
    * Les données et fichiers transitent sans repasser par le serveur.
