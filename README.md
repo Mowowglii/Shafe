@@ -1,96 +1,128 @@
-# Shafe — Transfert de fichiers P2P décentralisé
+# Shafe - Transfert de fichiers P2P décentralisé
 
-Une application web de transfert de fichiers **privé et décentralisé**, sans serveur centralisé. 
-Shafe explore une architecture distribuée basée sur WebRTC pour établir des connexions pair-à-pair sécurisées.
+Une application web de transfert de fichiers privé et décentralisé, sans stockage intermédiaire. Shafe repose sur une architecture distribuée s'appuyant sur WebRTC pour établir des connexions pair-à-pair directes et sécurisées, orchestrées par un serveur de signalement Spring Boot.
 
-**État : En développement actif** — Backend en consolidation
+Etat : En développement actif - Structuration du client et consolidation du backend.
 
 ---
 
-## État du projet
+## Etat du projet
 
-- ✅ **Backend (SpringBoot)** : WebSocket configuré, gestion des salles de signalement en consolidation
-- ⏳ **Communication P2P** : TypeScript + WebRTC (RTCPeerConnection) — à intégrer après stabilisation du backend
-- ⏳ **Frontend** : À explorer après stabilisation du backend
-- ⏳ **Tests** : À mettre en place
-
-**Prochaine étape immédiate :** Finaliser la consolidation du backend (WebSocket + salles de signalement)
+* Backend (Spring Boot) : WebSocket configuré, API REST de gestion des salles, tests d'intégration et unitaires en place.
+* Client (TypeScript & WebRTC) : Module de signalement, gestion des RTCPeerConnection et du RTCDataChannel en cours de finalisation.
+* Frontend / UI : Interface utilisateur basique en intégration dans le client.
+* Transfert P2P : Validation de la transmission de fichiers de bout en bout.
 
 ---
 
 ## Architecture
 
-Shafe fonctionne en deux phases :
+Shafe fonctionne en deux phases distinctes :
 
-1. **Création de salle & Signaling (REST API + WebSocket)**
-   - Le client crée une salle via une requête REST API (gérée par le service de gestion de salle)
-   - Le client se connecte au serveur SpringBoot via WebSocket
-   - Les clients effectuent le signaling via TypeScript — le serveur redirige les messages (SDP, ICE candidates)
+1. Création de salle & Signalement (REST API + WebSocket)
+   * Le client crée ou rejoint une salle via l'API REST du serveur Spring Boot.
+   * La connexion WebSocket est établie pour échanger les métadonnées du signaling (offres, réponses SDP, candidats ICE).
+2. Transfert P2P (WebRTC DataChannel)
+   * Une fois le signaling terminé, la connexion P2P est établie directement entre les deux navigateurs.
+   * Les données et fichiers transitent sans repasser par le serveur.
 
-2. **Transfert P2P (WebRTC)**
-   - Une fois la connexion P2P établie, les clients peuvent s'envoyer des fichiers directement
-   - Le serveur n'intervient plus — communication décentralisée et privée
+```
+      +-----------------------------------------+
+      |         Serveur Spring Boot             |
+      |    (REST API + WebSocket Signaling)     |
+      +-----------------------------------------+
+          /                                   \
+    1. Signaling                         1. Signaling
+        /                                        \
+ +---------------+     2. Transfert Direct     +---------------+
+ | Client A (P2P)| <-------------------------> | Client B (P2P)|
+ +---------------+     (WebRTC DataChannel)    +---------------+
 
-**Résultat :** Transfert de fichiers privé, sans dépendre d'un stockage centralisé
+```
+
+---
+
+## Structure du projet
+
+Le dépôt est découpé en deux modules distincts :
+
+```text
+shafe/
+├── client/                      # Module Front-end / P2P TypeScript
+│   ├── dist/                    # Destination de transpilation et index.html
+│   ├── src/
+│   │   ├── signaling/           # Gestion des WebSocket et reconnexion au serveur
+│   │   ├── types/               # Typage TypeScript (interfaces des messages P2P)
+│   │   ├── ui/                  # Manipulation du DOM et liaisons UI
+│   │   ├── utils/               # Helpers (parsing, utilitaires)
+│   │   └── webrtc/              # Service de transfert P2P & gestion du RTCDataChannel
+│   ├── .env                     # Endpoints HTTP REST et WS
+│   ├── Makefile                 # Orchestration de la compilation TypeScript
+│   └── tsconfig.json
+│
+└── server/                      # Module Back-end Spring Boot
+    ├── src/
+    │   ├── main/java/...        # Salles de signalement, WebSocket, API REST
+    │   └── test/java/...        # Tests d'intégration (WebSocket) et contrôleurs
+    └── build.gradle.kts         # Configuration et dépendances Gradle
+
+```
 
 ---
 
 ## Stack technique
 
-| Composant | Technologie |
-|-----------|-------------|
-| **Backend** | Java 25, SpringBoot 4.0.6, Gradle |
-| **Serveur temps réel** | WebSocket (SpringBoot) |
-| **Communication P2P** | WebRTC en TypeScript (RTCPeerConnection) |
-| **Build** | Makefile, tsconfig.json |
+| Composant | Technologie / Outils |
+| --- | --- |
+| Backend | Java, Spring Boot, Gradle (Kotlin DSL) |
+| Signalement | WebSocket (Spring WebSocket / Messaging) |
+| Client / P2P | TypeScript, WebRTC (RTCPeerConnection, RTCDataChannel) |
+| Build & Tooling | Makefile (Client), Gradle Wrapper (Server) |
 
 ---
 
-## Installation & Setup
+## Installation & Lancement
 
 ### Prérequis
-- Java 25
-- Gradle
-- Node.js & npm
 
-### Lancer le projet
+* Java
+* Node.js & npm
+* Make
 
-1. **Compiler le TypeScript**
-   ```bash
-   make
-Lancer le serveur SpringBoot
-gradle bootRun
-Le serveur démarre sur [http://localhost:8080](http://localhost:8080`)
+### 1. Démarrer le serveur (Spring Boot)
 
-Architecture des dossiers
-shafe/
+```bash
+cd server
+./gradlew bootRun
 
-├── [dossiers backend SpringBoot]
+```
 
-├── webapp/          # Code TypeScript (signaling P2P)
+> Le serveur de signalement démarrera sur http://localhost:8080.
 
-├── ressources/      # Assets transpilés (destination tsconfig.json)
+### 2. Compiler le client
 
-└── Makefile         # Orchestration de la compilation
+```bash
+cd client
+make
+
+```
+
+> Les fichiers transpilés et l'application Web seront générés dans le dossier client/dist/.
 
 ---
 
 ## Roadmap
 
-- [x] **Finaliser le backend** — Consolidation WebSocket + salles de signalement (en cours)
-- [ ] **Intégrer WebRTC** — Implémenter RTCPeerConnection pour la communication P2P
-- [ ] **Tester le transfert de fichiers** — Valider la transmission P2P de bout en bout
-- [ ] **Frontend** — Interface utilisateur pour créer/rejoindre des salles
-- [ ] **Tests unitaires** — Couvrir les services critiques
-- [ ] **Optimisations** — Améliorer les performances et la stabilité
+* Architecture Mono-dépôt : Séparation propre des responsabilités (client/ et server/).
+* Backend Signalement : Consolidation WebSocket, gestion des salles et suite de tests.
+* Module WebRTC Client : Finalisation du RTCDataChannel et de la reconnexion automatique.
+* Transfert de fichiers P2P : Gestion des streams binaires (ArrayBuffer) et reconstitution côté récepteur.
+* UI/UX : Finalisation du tableau de bord d'envoi/réception et indicateur de progression.
 
 ---
 
-## Apprentissages
+## Apprentissages clés
 
-Ce projet est une opportunité d'explorer des technologies modernes et des concepts clés :
-
-- **WebRTC** : Comprendre le signaling, les connexions P2P, et la gestion des ICE candidates
-- **SpringBoot & WebSocket** : Gérer les connexions en temps réel et orchestrer le signaling
-- **TypeScript** : Monter en compétence sur un langage typé pour la communication P2P
-- **Architecture distribuée** : Concevoir une application sans dépendre d'un serveur centralisé
+* WebRTC & Network State : Gestion du cycle de vie des connexions P2P, NAT traversal (STUN/TURN) et négociations SDP.
+* Spring Boot & Concurrence : Orchestration en temps réel de salles de signalement éphémères et gestion synchrone/asynchrone des sessions WebSocket.
+* Architecture Software Craftsmanship : Isolation stricte du client P2P et du serveur de signalement, couverture par tests d'intégration.
