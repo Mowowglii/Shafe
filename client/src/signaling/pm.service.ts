@@ -2,7 +2,6 @@ import type { SignalingMessage } from "../types/sigmessage.js";
 
 export class PeerManagerService extends EventTarget{
     private pc : RTCPeerConnection | null = null;
-    private dc : RTCDataChannel | undefined = undefined;
     private iceCandidateBuffer : Array<RTCIceCandidate> = [];
     private isOfferAnswerFinished : boolean = false;
     private config : RTCConfiguration | null = null;
@@ -22,7 +21,6 @@ export class PeerManagerService extends EventTarget{
         // reset flag, buffer and data channel
         this.isOfferAnswerFinished = false;
         this.iceCandidateBuffer = [];
-        this.dc = undefined;
 
         // Close existing peer connection if present
         if (this.pc){
@@ -42,11 +40,10 @@ export class PeerManagerService extends EventTarget{
             this.dispatchEvent(new CustomEvent("connection-change", { detail : this.pc?.connectionState }));
         };
 
+        // Recover the data channel created by the Offerer/Creator
         this.pc.ondatachannel = (event) => {
-            // Recover the data channel created by the Offerer/Creator
-            this.dc = !this.dc ? event.channel : this.dc;
-            // Setup listener on the data channel
-            this.setupDataChannelListener()
+            // Notify Data Channel Recovered
+            this.dispatchEvent(new CustomEvent("datachannel-recovered", { detail : event.channel }));
         };
 
         // For the ice candidate part
@@ -86,9 +83,15 @@ export class PeerManagerService extends EventTarget{
     }
 
     async generateOffer(){
-        // Create and setup the data channel
-        this.dc = this.pc?.createDataChannel("file-transfer");
-        this.setupDataChannelListener();
+        // Create the data channel and abort if data channel couldn't been created
+        const dc : RTCDataChannel | undefined = this.pc?.createDataChannel("file-transfer");
+        if (!dc){
+            this.dispatchEvent(new CustomEvent("dc-not-created"));
+            return;
+        }
+
+        // Notify Data Channel Recovered
+        this.dispatchEvent(new CustomEvent("datachannel-recovered", { detail : dc }));
 
         // Create offer and verifying if it is successfully created
         const offer : RTCSessionDescriptionInit | undefined = await this.pc?.createOffer();
@@ -130,30 +133,6 @@ export class PeerManagerService extends EventTarget{
 
     private notifySignalGenerated(message : SignalingMessage){
         this.dispatchEvent(new CustomEvent("signal-generated", { detail : message }));
-    }
-
-    private setupDataChannelListener(){
-        this.dc?.addEventListener("open", (event) => {
-            // Notify on data channel ready
-            this.dispatchEvent(new CustomEvent("data-channel-ready", { detail : this.dc }));
-        });
-
-        this.dc?.addEventListener("close", (event) => {
-            // Clear dc for possible reuse
-            this.dc = undefined;
-            // Notify on data channel closed
-            this.dispatchEvent(new CustomEvent("data-channel-closed"));
-        })
-
-        this.dc?.addEventListener("message", (event) => {
-            // Notify on data received on the data channel
-            this.dispatchEvent(new CustomEvent("data-received", { detail : event.data }));
-        });
-
-        this.dc?.addEventListener("error", (event) => {
-            // Notify on data channel error
-            this.dispatchEvent(new CustomEvent("data-channel-error", { detail : event.error }));
-        });
     }
 
     async handleSignalingMessage(msg : SignalingMessage){
