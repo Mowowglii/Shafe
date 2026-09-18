@@ -8,7 +8,7 @@
     // Environment Settings
     "module": "nodenext",
     "target": "esnext",
-    "lib": ["esnext", "dom", "dom.iterable"], // <-- Added for browser support (window, document, etc.)
+    "lib": ["esnext", "dom", "dom.iterable", "ES2022"], // <-- Added for browser support (window, document, etc.)
     "types": ["vite/client"],
 
     // Other Outputs
