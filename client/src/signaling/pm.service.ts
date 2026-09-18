@@ -89,6 +89,7 @@ export class PeerManagerService extends EventTarget{
             this.dispatchEvent(new CustomEvent("dc-not-created"));
             return;
         }
+        dc.binaryType= "arraybuffer";
 
         // Notify Data Channel Recovered
         this.dispatchEvent(new CustomEvent("datachannel-recovered", { detail : dc }));
