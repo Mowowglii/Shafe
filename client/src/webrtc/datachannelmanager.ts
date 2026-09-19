@@ -1,8 +1,7 @@
-import { uint8ArrayToBase64 } from "../utils/converters.js";
-import { base64ToUint8Array } from "../utils/converters.js";
+import type { BinaryDataChannel } from "../types/binarydc.js";
 
 export class DataChannelManager extends EventTarget{
-    private dc : RTCDataChannel | null = null;
+    private dc : BinaryDataChannel | null = null;
     private readonly HIGH_WATERMARK : number = 1024 * 1024; // Pause sending when exceeding 1 MB
 
     constructor(){
@@ -10,7 +9,7 @@ export class DataChannelManager extends EventTarget{
     }
 
     bindDataChannel(dataChannel : RTCDataChannel){
-        this.dc = dataChannel;
+        this.dc = dataChannel as BinaryDataChannel;
         // Set the Low Threshold of the buffer 
         this.dc.bufferedAmountLowThreshold = 256 * 1024;
         if (this.dc.readyState === "open"){
@@ -35,7 +34,7 @@ export class DataChannelManager extends EventTarget{
             await this.waitForBufferToDrain();
         }
         // Send data
-        this.dc.send(uint8ArrayToBase64(chunk));
+        this.dc.send(chunk);
     }
 
     private waitForBufferToDrain() : Promise<void>{
@@ -59,7 +58,7 @@ export class DataChannelManager extends EventTarget{
 
         this.dc?.addEventListener("message", (event) => {
             // notify for file reconstruction
-            this.dispatchEvent(new CustomEvent("data-received", { detail : base64ToUint8Array(event.data) }));
+            this.dispatchEvent(new CustomEvent("data-received", { detail : event.data }));
         });
 
         this.dc?.addEventListener("error", (event) => {
