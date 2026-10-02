@@ -1,7 +1,7 @@
 import type { ChunkMetadata, FileChunk,FileMetadata } from "../types/filehandling.js"
 
 export class FileChunkingEngine extends EventTarget{
-    private readonly MAX_CHUNK_SIZE : number = 64*1024; // 64 KB
+    private static readonly MAX_CHUNK_SIZE : number = import.meta.env.CHUNK_SIZE;
 
     constructor(){
         super()
@@ -17,7 +17,7 @@ export class FileChunkingEngine extends EventTarget{
 
     private getFileMetaData(file : File): FileMetadata{
         // Equals the next multiple of MAX_CHUNK_SIZE
-        const totalChunkNeeded : number = (file.size + (file.size % this.MAX_CHUNK_SIZE)) / this.MAX_CHUNK_SIZE;
+        const totalChunkNeeded : number = (file.size + (file.size % FileChunkingEngine.MAX_CHUNK_SIZE)) / FileChunkingEngine.MAX_CHUNK_SIZE;
         return {fileName : file.name, totalChunk : totalChunkNeeded} as FileMetadata;
     }
 
@@ -26,16 +26,19 @@ export class FileChunkingEngine extends EventTarget{
 
         this.dispatchEvent(new CustomEvent("file-metadata-recovered", {detail : fileMetadata}));
         
-        var chunkNumber : number = 1;
+        var chunkNumber : number = 0;
 
         for await (const chunk of file.stream()){
             let offset = 0;
             while (offset < chunk.length) {
-                const end = Math.min(offset + this.MAX_CHUNK_SIZE, chunk.length);
+                const end = Math.min(offset + FileChunkingEngine.MAX_CHUNK_SIZE, chunk.length);
                 const piece = chunk.slice(offset, end);
-                const fileChunk : FileChunk = { metadata : this.setChunkMetadata(fileMetadata, chunkNumber), payload : chunk } as FileChunk;
+                const fileChunk : FileChunk = { metadata : this.setChunkMetadata(fileMetadata, chunkNumber), payload : piece } as FileChunk;
                 const data = this.fileChunkToUint8Array(fileChunk);
-
+                
+                this.dispatchEvent(new CustomEvent("chunk-generated", { detail : data }));
+                
+                offset = end;
             }
         }
     }
