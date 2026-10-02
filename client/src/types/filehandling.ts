@@ -5,7 +5,6 @@ export type FileChunk  = {
 
 export type ChunkMetadata = {
     fileName: string,
-    totalChunk: number,
     chunkNumber: number
 }
 
