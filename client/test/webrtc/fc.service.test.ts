@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { FileChunk, FileMetadata } from "../../src/types/filehandling.js";
-import type { FileChunkingEngine as FileChunkingEngineType } from "../../src/webrtc/filechunking.service.js";
+import type { FileChunk, FileMetadata } from "../../src/types/filehandling";
+import type { FileChunkingEngine as FileChunkingEngineType } from "../../src/webrtc/filechunking.service";
 
 type SerializedFileChunk = {
   metadata: FileChunk["metadata"] & { totalChunk: number };
@@ -13,7 +13,7 @@ describe("FileChunkingEngine", () => {
   beforeEach(async () => {
     vi.stubEnv("CHUNK_SIZE", "4");
     vi.resetModules();
-    ({ FileChunkingEngine } = await import("../../src/webrtc/filechunking.service.js"));
+    ({ FileChunkingEngine } = await import("../../src/webrtc/filechunking.service"));
   });
 
   afterEach(() => {
