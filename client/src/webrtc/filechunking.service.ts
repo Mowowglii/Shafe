@@ -1,10 +1,10 @@
-import type { ChunkMetadata, FileChunk,FileMetadata } from "../types/filehandling.js"
+import type { ChunkMetadata, FileChunk, FileMetadata } from "../types/filehandling.js";
 
 export class FileChunkingEngine extends EventTarget{
     private static readonly MAX_CHUNK_SIZE : number = import.meta.env.CHUNK_SIZE;
 
     constructor(){
-        super()
+        super();
     }
 
     private fileChunkToUint8Array(data : FileChunk) : Uint8Array{
@@ -17,7 +17,7 @@ export class FileChunkingEngine extends EventTarget{
 
     private getFileMetaData(file : File): FileMetadata{
         // Equals the next multiple of MAX_CHUNK_SIZE
-        const totalChunkNeeded : number = (file.size + (file.size % FileChunkingEngine.MAX_CHUNK_SIZE)) / FileChunkingEngine.MAX_CHUNK_SIZE;
+        const totalChunkNeeded : number = Math.ceil(file.size / FileChunkingEngine.MAX_CHUNK_SIZE);
         return {fileName : file.name, totalChunk : totalChunkNeeded} as FileMetadata;
     }
 
