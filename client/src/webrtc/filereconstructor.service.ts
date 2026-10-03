@@ -26,7 +26,7 @@ export class FileReconstructorEngine extends EventTarget{
                 let payload_byte : number | undefined = chunk.payload[i];
                 let byte : number;
 
-                if(!payload_byte){
+                if(payload_byte === undefined){
                     this.dispatchEvent(new CustomEvent("chunk-payload-corrupted"));
                     return;
                 } else {
