@@ -81,7 +81,9 @@ export class WebSocketService extends EventTarget{
     sendSignal(msg: SignalingMessage) {
         // Pending message when ws is not instanciate or not ready
         if (!this.ws || this.ws.readyState === WebSocket.CONNECTING) {
-            this.pendingMessage.push(msg);
+            this.pendingMessage.push(msg);        
+            // Notify on message not sent
+            this.dispatchEvent(new CustomEvent("msg-not-sent", { detail: msg }));
             return;
         }
 
@@ -92,9 +94,6 @@ export class WebSocketService extends EventTarget{
             this.dispatchEvent(new CustomEvent("msg-sent", { detail: msg }));
             return;
         }
-
-        // Notify on message not sent
-        this.dispatchEvent(new CustomEvent("msg-not-sent", { detail: msg }));
     }
 
     private flushPending(){
