@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { PeerManagerService } from "../src/signaling/pm.service.js";
-import type { SignalingMessage } from "../src/types/sigmessage.js";
+import { PeerManagerService } from "../../src/signaling/pm.service.js";
+import type { SignalingMessage } from "../../src/types/sigmessage.js";
 
 class MockPeerConnection {
   static instances: MockPeerConnection[] = [];

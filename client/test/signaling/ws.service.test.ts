@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { Server, WebSocket as MockWebSocket } from "mock-socket";
-import { WebSocketService } from "../src/signaling/ws.service";
-import type { SignalingMessage } from "../src/types/sigmessage";
+import { WebSocketService } from "../../src/signaling/ws.service";
+import type { SignalingMessage } from "../../src/types/sigmessage";
 
 describe("WebSocketService", () => {
   const WS_URL = "ws://localhost:8080";
