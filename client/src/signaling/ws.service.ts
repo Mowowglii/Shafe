@@ -5,9 +5,11 @@ export class WebSocketService extends EventTarget{
     private ws : WebSocket | null = null;
     private pendingMessage : SignalingMessage[] = [];
     private reconnectTimer : number | null = null;
+    private reconnectResetTimer : number | null = null;
     private reconnectAttempt : number = 0;
     private readonly maxReconnectAttempts : number = 5;
     private readonly reconnectDelayMs : number = 1000;
+    private readonly stableConnectionMs : number = 30000; // 30s
     private isReconnecting : boolean = false;
     private isClosedByUser : boolean = false;
     private url : string = "";
@@ -26,6 +28,15 @@ export class WebSocketService extends EventTarget{
             }));
             return;
         }
+
+        // Clean up existing instance before recreating
+        if (this.ws) {
+            this.ws.onopen = null;
+            this.ws.onclose = null;
+            this.ws.onerror = null;
+            this.ws.onmessage = null;
+        }
+
         // Try create web socket and set listeners
         try {
             this.ws = new WebSocket(this.url);
@@ -38,10 +49,16 @@ export class WebSocketService extends EventTarget{
 
         // OPEN
         this.ws.onopen = (event) => {
-            // Reset reconnect attempt
-            this.reconnectAttempt = 0;
             // Update the reconnecting flag
             this.isReconnecting = false;
+            
+            // reset reconnect attempt only if connection is considered as stable
+            if (this.reconnectAttempt > 0) {
+                this.reconnectResetTimer = globalThis.setTimeout(() => {
+                    this.reconnectAttempt = 0;
+                    this.reconnectResetTimer = null;
+                }, this.stableConnectionMs);
+            }
             // flush pending message
             this.flushPending();
             // Notify on ws opened
@@ -50,6 +67,10 @@ export class WebSocketService extends EventTarget{
 
         // CLOSE
         this.ws.onclose = (event) => {
+            if (this.reconnectResetTimer !== null) {
+                clearTimeout(this.reconnectResetTimer);
+                this.reconnectResetTimer = null;
+            }
             // check intentional close and close code
             if (!this.isClosedByUser && this.shouldRetryAfterClose(event)){
                 // Schedule reconnect
@@ -148,7 +169,8 @@ export class WebSocketService extends EventTarget{
         this.isReconnecting = true;
         
         // Schedule reconnect
-        this.reconnectTimer = window.setTimeout(() => {
+        this.reconnectTimer = globalThis.setTimeout(() => {
+            this.isReconnecting = false;
             this.connect();
         }, this.reconnectDelayMs * this.reconnectAttempt);
     }
@@ -158,8 +180,12 @@ export class WebSocketService extends EventTarget{
         if (this.reconnectTimer !== null) {
             clearTimeout(this.reconnectTimer);
         }
+        if (this.reconnectResetTimer !== null) {
+            clearTimeout(this.reconnectResetTimer);
+        }
         // Reset Timer
         this.reconnectTimer = null;
+        this.reconnectResetTimer = null;
         // Reset reconnecting
         this.isReconnecting = false;
         // Update isClosedByUser flag
@@ -169,6 +195,10 @@ export class WebSocketService extends EventTarget{
     }
 
     restart(url? : string) {
+        if (this.reconnectResetTimer !== null) {
+            clearTimeout(this.reconnectResetTimer);
+        }
+        this.reconnectResetTimer = null;
         // Change url if set in parameter
         if (url) {
             this.url = url;
