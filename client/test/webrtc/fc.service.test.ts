@@ -75,11 +75,11 @@ describe("FileChunkingEngine", () => {
 
     expect(generatedChunks.map(decodeChunk)).toEqual([
       {
-        metadata: { fileName: "sample.bin", totalChunk: 2, chunkNumber: 0 },
+        metadata: { fileName: "sample.bin", chunkNumber: 0 },
         payload: [1, 2, 3, 4],
       },
       {
-        metadata: { fileName: "sample.bin", totalChunk: 2, chunkNumber: 1 },
+        metadata: { fileName: "sample.bin", chunkNumber: 1 },
         payload: [5, 6, 7, 8],
       },
     ]);
@@ -97,7 +97,7 @@ describe("FileChunkingEngine", () => {
 
     expect(generatedChunks.map(decodeChunk)).toEqual([
       {
-        metadata: { fileName: "partial.bin", totalChunk: 1, chunkNumber: 0 },
+        metadata: { fileName: "partial.bin", chunkNumber: 0 },
         payload: [9, 10],
       },
     ]);
