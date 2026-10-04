@@ -38,8 +38,7 @@ out/
 shafe.code-workspace
 
 ### .env ###
-client/src/.env.development
-client/src/.env.production
+client/src/.env
 
 ### Transpiler Destination ###
 client/dist
