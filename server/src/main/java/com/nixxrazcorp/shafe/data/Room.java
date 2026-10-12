@@ -1,6 +1,8 @@
 package com.nixxrazcorp.shafe.data;
 
 import java.time.LocalDateTime;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -13,6 +15,9 @@ public final class Room{
     private static final Logger log = LoggerFactory.getLogger(Room.class);
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
+    private Instant lastSignalingAt;
+    private boolean expirationWarningSent;
+    private boolean expired;
     private ArrayList<FTSession> sessionList = new ArrayList<FTSession>();
     private boolean isFull = false;
     private int capacity;    
@@ -21,10 +26,16 @@ public final class Room{
     private int sleepingCounter = 0;
 
     public Room(){
+        this(0, Instant.now());
     }
 
     public Room(int max_size){
+        this(max_size, Instant.now());
+    }
+
+    public Room(int max_size, Instant createdAt){
         this.capacity = max_size;
+        this.lastSignalingAt = createdAt;
     }
 
     public List<FTSession> getSessions(){
@@ -54,9 +65,102 @@ public final class Room{
         }
     }
 
-    public boolean addSession(WebSocketSession ws){
+    public boolean recordSignalingActivity(WebSocketSession ws, Instant activityTime, Duration ttl){
         lock.writeLock().lock();
         try {
+            if (this.expired || Duration.between(this.lastSignalingAt, activityTime).compareTo(ttl) >= 0){
+                this.expired = true;
+                return false;
+            }
+            FTSession session = this.findSessionByWs(ws);
+            if (session == null || !session.isActive()){
+                return false;
+            }
+            this.lastSignalingAt = activityTime;
+            this.expirationWarningSent = false;
+            return true;
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    public boolean markExpirationWarningIfDue(Instant now, Duration ttl, Duration warningLead){
+        lock.writeLock().lock();
+        try {
+            if (this.expired || this.expirationWarningSent
+                    || Duration.between(this.lastSignalingAt, now).compareTo(ttl.minus(warningLead)) < 0){
+                return false;
+            }
+            this.expirationWarningSent = true;
+            return true;
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    public boolean isExpirationWarningSent(){
+        lock.readLock().lock();
+        try {
+            return this.expirationWarningSent;
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    public long remainingTtlSeconds(Instant now, Duration ttl){
+        lock.readLock().lock();
+        try {
+            return Math.max(0, ttl.minus(Duration.between(this.lastSignalingAt, now)).toSeconds());
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    public boolean tryExpire(Instant now, Duration ttl){
+        lock.writeLock().lock();
+        try {
+            if (this.expired || Duration.between(this.lastSignalingAt, now).compareTo(ttl) < 0){
+                return false;
+            }
+            this.expired = true;
+            return true;
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    public boolean isExpired(){
+        lock.readLock().lock();
+        try {
+            return this.expired;
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    public List<WebSocketSession> getActiveSessions(){
+        lock.readLock().lock();
+        try {
+            List<WebSocketSession> activeSessions = new ArrayList<>();
+            for (FTSession session : this.sessionList){
+                if (session.isActive() && session.getWsSession() != null){
+                    activeSessions.add(session.getWsSession());
+                }
+            }
+            return activeSessions;
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    public boolean addSession(WebSocketSession ws, Instant now, Duration ttl){
+        lock.writeLock().lock();
+        try {
+            if (this.expired || Duration.between(this.lastSignalingAt, now).compareTo(ttl) >= 0){
+                this.expired = true;
+                log.debug("Rejected session {} because room has expired", sessionId(ws));
+                return false;
+            }
             if (this.isFull){
                 log.debug("Rejected session {} because room is full", sessionId(ws));
                 return false;

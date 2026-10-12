@@ -53,7 +53,7 @@ public class SignalingHandler extends TextWebSocketHandler{
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message){
         String roomId = recoverRoomId(session);
-        if (roomId != null){
+        if (roomId != null && roomManagerService.recordSignalingActivity(roomId, session)){
             List<WebSocketSession> listOfSessions = roomManagerService.getOtherActiveSessions(roomId, session);
             log.debug("Forwarding signaling message from session {} to {} peer(s) in room {}; payload length={}",
                     session.getId(), listOfSessions.size(), roomId, message.getPayloadLength());
@@ -67,9 +67,11 @@ public class SignalingHandler extends TextWebSocketHandler{
                     roomManagerService.leaveRoom(roomId, ws);
                 }
             }
-        } else {
+        } else if (roomId == null) {
             log.warn("Ignoring signaling message from session {} without a valid roomId query parameter",
                     session.getId());
+        } else {
+            log.warn("Ignoring signaling message from non-member session {} for room {}", session.getId(), roomId);
         }
     }
 
