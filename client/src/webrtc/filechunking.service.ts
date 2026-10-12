@@ -1,46 +1,54 @@
-import type { ChunkMetadata, FileChunk, FileMetadata } from "../types/filehandling.js";
+import { DEFAULT_FILE_CHUNK_SIZE, type ChunkMetadata, type FileChunk, type FileMetadata } from "../types/filehandling.js";
 
 export class FileChunkingEngine extends EventTarget{
-    private static readonly MAX_CHUNK_SIZE : number = import.meta.env.CHUNK_SIZE;
+    private readonly maxChunkSize: number;
 
-    constructor(){
+    constructor(maxChunkSize = DEFAULT_FILE_CHUNK_SIZE){
         super();
+        if (!Number.isSafeInteger(maxChunkSize) || maxChunkSize <= 0) {
+            throw new RangeError("Chunk size must be a positive safe integer");
+        }
+        this.maxChunkSize = maxChunkSize;
     }
 
-    private fileChunkToUint8Array(data : FileChunk) : Uint8Array{
-        return new TextEncoder().encode(JSON.stringify({
-            metadata: data.metadata,
-            payload: Array.from(data.payload)
-        }));
+    private setChunkMetadata(fileName: string, transferId: string, chunkNumber: number): ChunkMetadata {
+        return { fileName, transferId, chunkNumber };
     }
 
-    private setChunkMetadata(fileName : string, chunknumber : number) : ChunkMetadata{
-        return { fileName : fileName, chunkNumber : chunknumber } as ChunkMetadata;
+    private getFileMetaData(file: File, transferId: string): FileMetadata {
+        const totalChunk = Math.ceil(file.size / this.maxChunkSize);
+        return {
+            fileName: file.name,
+            mimeType: file.type,
+            transferId,
+            fileSize: file.size,
+            totalChunk,
+        };
     }
 
-    private getFileMetaData(file : File): FileMetadata{
-        // Equals the next multiple of MAX_CHUNK_SIZE
-        const totalChunkNeeded : number = Math.ceil(file.size / FileChunkingEngine.MAX_CHUNK_SIZE);
-        return {fileName : file.name, totalChunk : totalChunkNeeded} as FileMetadata;
+    private async emitChunk(
+        chunkMetadata: ChunkMetadata,
+        payload: Uint8Array,
+        onChunk?: (chunk: FileChunk) => Promise<void>,
+    ): Promise<void> {
+        const chunk = { metadata: chunkMetadata, payload };
+        this.dispatchEvent(new CustomEvent<FileChunk>("chunk-generated", { detail: chunk }));
+        await onChunk?.(chunk);
     }
 
-    private emitChunk(chunkMetadata : ChunkMetadata, payload : Uint8Array){
-        this.dispatchEvent(new CustomEvent("chunk-generated", { 
-                            detail : this.fileChunkToUint8Array({ 
-                                metadata : chunkMetadata,
-                                payload : payload
-                            } as FileChunk)
-                        }));
-    }
-
-    async chunkFile(file : File){
-        const fileMetadata : FileMetadata = this.getFileMetaData(file);
-
-        this.dispatchEvent(new CustomEvent("file-metadata-recovered", {detail : fileMetadata}));
+    async chunkFile(
+        file: File,
+        transferId = crypto.randomUUID(),
+        onChunk?: (chunk: FileChunk) => Promise<void>,
+        onMetadata?: (metadata: FileMetadata) => Promise<void>,
+    ): Promise<FileMetadata> {
+        const fileMetadata = this.getFileMetaData(file, transferId);
+        this.dispatchEvent(new CustomEvent<FileMetadata>("file-metadata-recovered", { detail: fileMetadata }));
+        await onMetadata?.(fileMetadata);
         
-        let chunkNumber : number = 0;
-        let chunkOffset : number = 0;
-        let chunkValues : Uint8Array = new Uint8Array(FileChunkingEngine.MAX_CHUNK_SIZE);
+        let chunkNumber = 0;
+        let chunkOffset = 0;
+        let chunkValues = new Uint8Array(this.maxChunkSize);
 
         for await (const streamChunk of file.stream()){
             let streamOffset = 0;
@@ -55,29 +63,44 @@ export class FileChunkingEngine extends EventTarget{
                         chunkOffset += streamSpace;
 
                         if (chunkValues.length == chunkOffset){
-                            this.emitChunk(this.setChunkMetadata(file.name, chunkNumber), chunkValues);
+                            await this.emitChunk(
+                                this.setChunkMetadata(file.name, transferId, chunkNumber),
+                                chunkValues,
+                                onChunk,
+                            );
                                 
                             chunkNumber += 1;
 
                             chunkOffset = 0;
+                            chunkValues = new Uint8Array(this.maxChunkSize);
                         }
                 } else { // fill chunkValue and give it
                     chunkValues.set(streamChunk.subarray(streamOffset, streamOffset + chunkSpace), chunkOffset);
                     streamOffset += chunkSpace;
                     
-                    this.emitChunk(this.setChunkMetadata(file.name, chunkNumber), chunkValues);
+                    await this.emitChunk(
+                        this.setChunkMetadata(file.name, transferId, chunkNumber),
+                        chunkValues,
+                        onChunk,
+                    );
 
                     chunkNumber += 1;
 
                     // restrict chunkOffset
                     chunkOffset = 0;
+                    chunkValues = new Uint8Array(this.maxChunkSize);
                 }
             }
         }
 
-        if (file.size % FileChunkingEngine.MAX_CHUNK_SIZE != 0){
-            this.emitChunk(this.setChunkMetadata(file.name, chunkNumber), chunkValues.subarray(0, file.size % FileChunkingEngine.MAX_CHUNK_SIZE))
+        if (chunkOffset > 0) {
+            await this.emitChunk(
+                this.setChunkMetadata(file.name, transferId, chunkNumber),
+                chunkValues.subarray(0, chunkOffset),
+                onChunk,
+            );
         }
+        return fileMetadata;
     }
 
 }
