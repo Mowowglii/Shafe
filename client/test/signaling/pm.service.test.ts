@@ -212,6 +212,29 @@ describe("PeerManagerService", () => {
     expect(generatedSignals).toEqual([{ type: "offer-answer-finish", payload: "" }]);
   });
 
+  it("flushes locally buffered ICE candidates after applying the remote answer", async () => {
+    const service = new PeerManagerService({});
+    const peer = peerInstances[0]!;
+    const candidate = makeCandidate("candidate:local-before-answer");
+    const generatedSignals: SignalingMessage[] = [];
+    service.addEventListener("signal-generated", (event) => {
+      generatedSignals.push(customEventDetail(event));
+    });
+    peer.onicecandidate?.(
+      { candidate } as Parameters<NonNullable<RTCPeerConnection["onicecandidate"]>>[0],
+    );
+
+    await service.handleSignalingMessage({
+      type: "answer",
+      payload: JSON.stringify({ type: "answer", sdp: "remote-answer" }),
+    });
+
+    expect(generatedSignals).toEqual([
+      { type: "offer-answer-finish", payload: "" },
+      { type: "icecandidate", payload: JSON.stringify(candidate) },
+    ]);
+  });
+
   it("buffers ICE candidates until offer-answer-finish and then emits them in order", async () => {
     const service = new PeerManagerService({});
     const peer = peerInstances[0]!;

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#101827" />
+    <title>Shafe — Peer-to-peer file transfer</title>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Shafe</h1>
+        <p>Private, peer-to-peer file transfer</p>
+      </header>
+
+      <section id="setup-view" aria-labelledby="setup-title">
+        <h2 id="setup-title">Start a transfer</h2>
+        <button id="create-room-btn" type="button">Create a room</button>
+        <p>or join with a room ID</p>
+        <form id="join-room-form">
+          <label for="room-id-input">Room ID</label>
+          <input id="room-id-input" name="roomId" autocomplete="off" required />
+          <button id="join-room-btn" type="submit">Join room</button>
+        </form>
+      </section>
+
+      <section id="transfer-view" aria-labelledby="transfer-title" hidden>
+        <h2 id="transfer-title">Transfer room</h2>
+        <p>Room ID: <code id="current-room-id"></code></p>
+        <p id="connection-status" role="status" aria-live="polite">Connecting…</p>
+        <p id="peer-disconnect-notice" role="alert" hidden></p>
+        <label for="file-input">Choose a file</label>
+        <input id="file-input" type="file" />
+        <button id="send-file-btn" type="button" disabled>Send file</button>
+        <button id="leave-room-btn" type="button">Leave room</button>
+        <progress id="progress-bar" value="0" max="100" aria-label="File transfer progress"></progress>
+        <ul id="received-files" aria-label="Received files"></ul>
+      </section>
+
+      <p id="app-error" role="alert" hidden></p>
+    </main>
+    <script type="module" src="/src/index.ts"></script>
+  </body>
+</html>
