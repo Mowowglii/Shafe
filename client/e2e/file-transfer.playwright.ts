@@ -35,9 +35,14 @@ test("creates a room, connects two peers, closes signaling, then transfers a fil
             buffer: Buffer.from(fileContents),
         });
         await sender.getByRole("button", { name: "Send file" }).click();
+        await expect(sender.locator("#progress-bar")).toBeHidden({ timeout: 30_000 });
+        await expect(sender.locator("#transfer-complete")).toBeVisible();
+        await expect(sender.locator("#connection-status")).toHaveText(`${fileName} sent successfully`);
 
         const receivedFileLink = receiver.getByRole("link", { name: new RegExp(fileName) });
         await expect(receivedFileLink).toBeVisible({ timeout: 30_000 });
+        await expect(receiver.locator("#progress-bar")).toBeHidden();
+        await expect(receiver.locator("#transfer-complete")).toBeVisible();
         const downloadPromise = receiver.waitForEvent("download");
         await receivedFileLink.click();
         const download = await downloadPromise;

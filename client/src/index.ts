@@ -17,6 +17,7 @@ const connectionStatus = getElement<HTMLElement>("connection-status");
 const fileInput = getElement<HTMLInputElement>("file-input");
 const sendFileButton = getElement<HTMLButtonElement>("send-file-btn");
 const progressBar = getElement<HTMLProgressElement>("progress-bar");
+const transferComplete = getElement<HTMLElement>("transfer-complete");
 const receivedFiles = getElement<HTMLUListElement>("received-files");
 const peerDisconnectNotice = getElement<HTMLElement>("peer-disconnect-notice");
 const leaveRoomButton = getElement<HTMLButtonElement>("leave-room-btn");
@@ -46,6 +47,8 @@ sendFileButton.addEventListener("click", () => {
         return;
     }
     try {
+        progressBar.hidden = false;
+        transferComplete.hidden = true;
         progressBar.value = 0;
         connectionManager.sendFile(file);
         sendFileButton.disabled = true;
@@ -173,10 +176,15 @@ async function startConnection(roomId: string, role: ConnectionRole): Promise<vo
     });
     connectionManager.addEventListener("file-send-complete", (event) => {
         const detail = (event as CustomEvent<Extract<FileTransferResponse, { type: "file-send-complete" }>>).detail;
-        setStatus(`${detail.fileName} sent`);
+        progressBar.value = progressBar.max;
+        progressBar.hidden = true;
+        transferComplete.hidden = false;
+        setStatus(`${detail.fileName} sent successfully`);
         sendFileButton.disabled = !fileInput.files?.[0];
     });
     connectionManager.addEventListener("file-received", (event) => {
+        progressBar.hidden = true;
+        transferComplete.hidden = false;
         addReceivedFile((event as CustomEvent<ReceivedFile>).detail);
     });
 }
@@ -217,6 +225,8 @@ function returnToSetup(): void {
     sendFileButton.disabled = true;
     progressBar.value = 0;
     progressBar.max = 100;
+    progressBar.hidden = false;
+    transferComplete.hidden = true;
     currentRoomId.textContent = "";
     copyRoomIdStatus.textContent = "";
     peerDisconnectNotice.hidden = true;

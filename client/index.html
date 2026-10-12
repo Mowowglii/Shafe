@@ -37,7 +37,14 @@
         <input id="file-input" type="file" />
         <button id="send-file-btn" type="button" disabled>Send file</button>
         <button id="leave-room-btn" type="button">Leave room</button>
-        <progress id="progress-bar" value="0" max="100" aria-label="File transfer progress"></progress>
+        <div class="transfer-progress">
+          <progress id="progress-bar" value="0" max="100" aria-label="File transfer progress"></progress>
+          <span id="transfer-complete" class="transfer-complete" role="status" aria-label="Transfer complete" hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m5 12 4 4L19 6" />
+            </svg>
+          </span>
+        </div>
         <ul id="received-files" aria-label="Received files"></ul>
       </section>
 
