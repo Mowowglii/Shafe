@@ -1,0 +1,163 @@
+import { PeerManagerService } from "./signaling/pm.service.js";
+import { WebSocketService } from "./signaling/ws.service.js";
+import type { SignalingMessage } from "./types/sigmessage.js";
+import { FileTransferManager } from "./webrtc/filetransfer.manager.js";
+
+export type ConnectionRole = "initiator" | "recipient";
+
+export class ConnectionManager extends EventTarget {
+    private readonly peerManager: PeerManagerService;
+    private readonly fileTransferManager: FileTransferManager;
+    private readonly webSocketService: WebSocketService;
+    private signalingQueue: Promise<void> = Promise.resolve();
+    private offerStarted = false;
+    private peerConnected = false;
+    private dataChannelOpen = false;
+    private signalingClosed = false;
+    private isClosed = false;
+
+    constructor(roomId: string, role: ConnectionRole, rtcConfiguration: RTCConfiguration = {}) {
+        super();
+        this.peerManager = new PeerManagerService(rtcConfiguration);
+        this.fileTransferManager = new FileTransferManager();
+        this.bindPeerManager();
+        this.bindFileTransferManager();
+
+        const signalingUrl = new URL("/signal", window.location.origin);
+        signalingUrl.protocol = signalingUrl.protocol === "https:" ? "wss:" : "ws:";
+        signalingUrl.searchParams.set("roomId", roomId);
+        this.webSocketService = new WebSocketService(signalingUrl.toString());
+        this.bindWebSocketService(role);
+    }
+
+    sendFile(file: File): void {
+        this.fileTransferManager.sendFile(file);
+    }
+
+    close(): void {
+        if (this.isClosed) {
+            return;
+        }
+        this.isClosed = true;
+        this.webSocketService.stop();
+        this.fileTransferManager.close();
+        this.peerManager.close();
+    }
+
+    private bindPeerManager(): void {
+        this.peerManager.addEventListener("signal-generated", (event) => {
+            this.webSocketService.sendSignal((event as CustomEvent<SignalingMessage>).detail);
+        });
+        this.peerManager.addEventListener("datachannel-recovered", (event) => {
+            this.fileTransferManager.bindDataChannel((event as CustomEvent<RTCDataChannel>).detail);
+        });
+        this.peerManager.addEventListener("connection-change", (event) => {
+            if (this.isClosed) {
+                return;
+            }
+            const state = (event as CustomEvent<RTCPeerConnectionState>).detail;
+            this.peerConnected = state === "connected";
+            this.dispatchEvent(new CustomEvent("connection-state", { detail: state }));
+            this.closeSignalingWhenReady();
+        });
+        for (const eventName of [
+            "dc-not-created",
+            "offer-creation-failed",
+            "answer-creation-failed",
+        ]) {
+            this.peerManager.addEventListener(eventName, () => {
+                this.dispatchEvent(new CustomEvent("connection-error", {
+                    detail: { reason: eventName },
+                }));
+            });
+        }
+    }
+
+    private bindFileTransferManager(): void {
+        this.fileTransferManager.addEventListener("data-channel-open", () => {
+            this.dataChannelOpen = true;
+            this.dispatchEvent(new CustomEvent("data-channel-open"));
+            this.closeSignalingWhenReady();
+        });
+        this.fileTransferManager.addEventListener("data-channel-closed", () => {
+            this.dataChannelOpen = false;
+            this.dispatchEvent(new CustomEvent("data-channel-closed"));
+        });
+        for (const eventName of [
+            "file-received",
+            "file-send-complete",
+            "file-send-progress",
+            "file-transfer-error",
+            "data-channel-error",
+        ]) {
+            this.fileTransferManager.addEventListener(eventName, (event) => {
+                const detail = (event as CustomEvent<unknown>).detail;
+                this.dispatchEvent(new CustomEvent(eventName, { detail }));
+            });
+        }
+    }
+
+    private bindWebSocketService(role: ConnectionRole): void {
+        this.webSocketService.addEventListener("ws-opened", () => {
+            this.dispatchEvent(new CustomEvent("signaling-open"));
+            this.webSocketService.sendSignal({
+                type: "peer-ready",
+                payload: role,
+            });
+        });
+        this.webSocketService.addEventListener("signal-received", (event) => {
+            const message = (event as CustomEvent<SignalingMessage>).detail;
+            if (message.type === "peer-ready") {
+                if (role === "initiator" && message.payload === "recipient") {
+                    this.startOffer();
+                } else if (role === "recipient" && message.payload === "initiator") {
+                    this.webSocketService.sendSignal({ type: "peer-ready", payload: role });
+                }
+                return;
+            }
+            this.signalingQueue = this.signalingQueue
+                .then(() => this.peerManager.handleSignalingMessage(message))
+                .catch((error: unknown) => this.reportError("signaling", error));
+        });
+        this.webSocketService.addEventListener("ws-error", (event) => {
+            this.dispatchEvent(new CustomEvent("connection-error", {
+                detail: (event as CustomEvent<unknown>).detail,
+            }));
+        });
+        this.webSocketService.addEventListener("error-in-data", () => {
+            this.dispatchEvent(new CustomEvent("connection-error", {
+                detail: { reason: "Invalid signaling message received" },
+            }));
+        });
+        this.webSocketService.addEventListener("room-expiring", (event) => {
+            this.dispatchEvent(new CustomEvent("room-expiring", {
+                detail: (event as CustomEvent<unknown>).detail,
+            }));
+        });
+    }
+
+    private startOffer(): void {
+        if (this.offerStarted) {
+            return;
+        }
+        this.offerStarted = true;
+        void this.peerManager.generateOffer().catch((error: unknown) => {
+            this.reportError("offer", error);
+        });
+    }
+
+    private closeSignalingWhenReady(): void {
+        if (this.peerConnected && this.dataChannelOpen && !this.signalingClosed) {
+            this.signalingClosed = true;
+            this.webSocketService.stop();
+            this.dispatchEvent(new CustomEvent("signaling-closed"));
+        }
+    }
+
+    private reportError(operation: string, error: unknown): void {
+        const reason = error instanceof Error ? error.message : String(error);
+        this.dispatchEvent(new CustomEvent("connection-error", {
+            detail: { operation, reason },
+        }));
+    }
+}

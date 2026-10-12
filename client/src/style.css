@@ -1,0 +1,93 @@
+:root {
+  color: #e5edf8;
+  background: #101827;
+  font: 16px/1.5 system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+}
+
+main {
+  box-sizing: border-box;
+  width: min(100% - 2rem, 42rem);
+  margin: 4rem auto;
+  padding: 2rem;
+  border: 1px solid #34445d;
+  border-radius: 1rem;
+  background: #182438;
+}
+
+header {
+  margin-bottom: 2rem;
+}
+
+h1 {
+  margin-bottom: 0;
+  color: #84d6c2;
+}
+
+section {
+  display: grid;
+  gap: 0.8rem;
+}
+
+form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+input,
+button {
+  box-sizing: border-box;
+  min-height: 2.7rem;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid #53647c;
+  border-radius: 0.45rem;
+  font: inherit;
+}
+
+input {
+  color: #e5edf8;
+  background: #101827;
+}
+
+button {
+  color: #101827;
+  border-color: #84d6c2;
+  background: #84d6c2;
+  cursor: pointer;
+  font-weight: 650;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+progress {
+  width: 100%;
+  height: 0.8rem;
+  accent-color: #84d6c2;
+}
+
+code {
+  overflow-wrap: anywhere;
+}
+
+[role="alert"] {
+  color: #ff9b9b;
+}
+
+#leave-room-btn {
+  color: #e5edf8;
+  border-color: #53647c;
+  background: transparent;
+}
+
+[hidden] {
+  display: none !important;
+}

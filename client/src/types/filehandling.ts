@@ -27,6 +27,7 @@ export type FileTransferRequest =
 
 export type FileTransferResponse =
     | { type: "send-data"; packetId: number; data: string | ArrayBuffer }
+    | { type: "file-send-progress"; fileName: string; transferId: string; sentChunks: number; totalChunks: number }
     | { type: "file-send-complete"; fileName: string; transferId: string }
     | { type: "file-received"; metadata: FileMetadata; data: ArrayBuffer }
     | { type: "file-transfer-error"; operation: string; reason: string };

@@ -153,6 +153,7 @@ export class PeerManagerService extends EventTarget{
                 const finishMsg : SignalingMessage = { type : "offer-answer-finish", payload : "" } as SignalingMessage;
                 // Notify end of offer-answer step
                 this.notifySignalGenerated(finishMsg);
+                this.flushBuffer();
                 break;
             case "offer-answer-finish":
                 // Flush the buffer
@@ -169,5 +170,10 @@ export class PeerManagerService extends EventTarget{
             default:
                 break;
         }
+
+    }
+
+    close(): void {
+        this.pc?.close();
     }
 }

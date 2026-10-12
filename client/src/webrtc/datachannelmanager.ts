@@ -7,6 +7,7 @@ export class DataChannelManager extends EventTarget{
     private readonly handleOpen = () => {
         this.dc?.removeEventListener("open", this.handleOpen);
         this.setupDataChannel();
+        this.dispatchEvent(new CustomEvent("data-channel-open"));
     };
     private readonly handleClose = () => {
         this.unbindDataChannel();
@@ -34,6 +35,7 @@ export class DataChannelManager extends EventTarget{
         this.dc.bufferedAmountLowThreshold = 256 * 1024;
         if (this.dc.readyState === "open"){
             this.setupDataChannel();
+            this.dispatchEvent(new CustomEvent("data-channel-open"));
         } else {
             this.dc.addEventListener("open", this.handleOpen, { once: true });
         }

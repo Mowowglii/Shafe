@@ -35,6 +35,9 @@ export class FileTransferManager extends EventTarget {
             this.dataChannel = null;
             this.dispatchEvent(new CustomEvent("data-channel-closed"));
         });
+        this.dataChannelManager.addEventListener("data-channel-open", () => {
+            this.dispatchEvent(new CustomEvent("data-channel-open"));
+        });
     }
 
     bindDataChannel(dataChannel: RTCDataChannel): void {
@@ -68,6 +71,9 @@ export class FileTransferManager extends EventTarget {
                 break;
             case "file-send-complete":
                 this.dispatchEvent(new CustomEvent("file-send-complete", { detail: response }));
+                break;
+            case "file-send-progress":
+                this.dispatchEvent(new CustomEvent("file-send-progress", { detail: response }));
                 break;
             case "file-received": {
                 const receivedFile: ReceivedFile = {

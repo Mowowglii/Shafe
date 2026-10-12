@@ -1,4 +1,4 @@
-import type { FileMetadata, FileTransferRequest, FileTransferResponse } from "../types/filehandling.js";
+import { DEFAULT_FILE_CHUNK_SIZE, type FileMetadata, type FileTransferRequest, type FileTransferResponse } from "../types/filehandling.js";
 import { decodeFileChunk, decodeFileMetadata, encodeFileChunk, encodeFileMetadata } from "../webrtc/filetransfer.protocol.js";
 import { FileChunkingEngine } from "../webrtc/filechunking.service.js";
 import { FileReconstructorEngine } from "../webrtc/filereconstructor.service.js";
@@ -67,11 +67,22 @@ async function sendFile(file: File): Promise<void> {
 
     sendInProgress = true;
     const transferId = crypto.randomUUID();
+    let sentChunks = 0;
     try {
         const metadata = await chunker.chunkFile(
             file,
             transferId,
-            async (chunk) => sendPacket(encodeFileChunk(chunk)),
+            async (chunk) => {
+                await sendPacket(encodeFileChunk(chunk));
+                sentChunks += 1;
+                workerScope.postMessage({
+                    type: "file-send-progress",
+                    fileName: file.name,
+                    transferId,
+                    sentChunks,
+                    totalChunks: Math.ceil(file.size / DEFAULT_FILE_CHUNK_SIZE),
+                });
+            },
             async (fileMetadata) => sendPacket(encodeFileMetadata(fileMetadata)),
         );
         workerScope.postMessage({
