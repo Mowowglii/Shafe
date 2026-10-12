@@ -119,6 +119,22 @@ describe("WebSocketService", () => {
       expect(receivedMsg).toEqual(incomingMsg);
     });
 
+    it("should dispatch room-expiring with the remaining time", () => {
+      let warningDetail: { secondsRemaining: number } | null = null;
+
+      service.addEventListener("room-expiring", (event: Event) => {
+        warningDetail = (event as CustomEvent).detail;
+      });
+
+      mockServer.on("connection", (socket) => {
+        socket.send(JSON.stringify({ type: "room-expiring", payload: "60" }));
+      });
+
+      vi.advanceTimersByTime(50);
+
+      expect(warningDetail).toEqual({ secondsRemaining: 60 });
+    });
+
     it("should dispatch error-in-data when server sends unparseable or error payload", async () => {
       let errorDispatched = false;
 

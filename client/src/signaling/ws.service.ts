@@ -224,6 +224,12 @@ export class WebSocketService extends EventTarget{
             this.dispatchEvent(new CustomEvent("error-in-data"));
             return;
         }
+        if (msg.type === "room-expiring"){
+            this.dispatchEvent(new CustomEvent("room-expiring", {
+                detail: { secondsRemaining: Number.parseInt(msg.payload, 10) }
+            }));
+            return;
+        }
         // Notify on signal received with the message in details
         this.dispatchEvent(new CustomEvent("signal-received", { detail : msg }));
     }
