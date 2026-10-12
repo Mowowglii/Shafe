@@ -22,6 +22,11 @@ public class RoomController {
         this.roomManagerService = roomManagerService;
     }
 
+    @GetMapping("/health")
+    public ResponseEntity<Void> health() {
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping
     public ResponseEntity<RoomResponse> createRoom() {
         String roomId;
