@@ -1,4 +1,4 @@
-package com.nixxrazcorp.shafe.controller;
+package com.nixxrazcorp.shafe.controllers;
 
 import com.nixxrazcorp.shafe.dto.RoomResponse;
 import com.nixxrazcorp.shafe.Service.RoomManagerService;
@@ -27,6 +27,6 @@ public class RoomController {
         } while (!roomManagerService.tryRegisterRoom(roomId)); // Make sure we create the room
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new RoomResponse(roomId));
+                .body(new RoomResponse(roomId, "initiator"));
     }
 }

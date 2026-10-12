@@ -23,6 +23,7 @@ public class SessionControllerTest {
         .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.roomId").exists())
+        .andExpect(jsonPath("$.role").value("initiator"))
         .andReturn().getResponse().getContentAsString();
     }
 }
