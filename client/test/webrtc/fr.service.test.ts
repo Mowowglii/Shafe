@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { FileChunk, FileMetadata } from "../../src/types/filehandling.js";
 import type { FileReconstructorEngine as FileReconstructorEngineType } from "../../src/webrtc/filereconstructor.service.js";
 
@@ -6,80 +6,91 @@ describe("FileReconstructorEngine", () => {
   let FileReconstructorEngine: typeof FileReconstructorEngineType;
 
   beforeEach(async () => {
-    vi.stubEnv("CHUNK_SIZE", "4");
     vi.resetModules();
     ({ FileReconstructorEngine } = await import("../../src/webrtc/filereconstructor.service.js"));
   });
 
-  afterEach(() => {
-    vi.unstubAllEnvs();
-  });
-
-  function reconstructedFile(
-    engine: FileReconstructorEngineType,
-    fileName: string,
-  ): Uint8Array | undefined {
-    const internals = engine as unknown as { fileMap: Map<string, Uint8Array> };
-    return internals.fileMap.get(fileName);
+  function makeMetadata(overrides: Partial<FileMetadata> = {}): FileMetadata {
+    return {
+      fileName: "document.bin",
+      mimeType: "application/octet-stream",
+      transferId: "transfer-1",
+      fileSize: 10,
+      totalChunk: 3,
+      ...overrides,
+    };
   }
 
-  function makeChunk(fileName: string, chunkNumber: number, payload: number[]): FileChunk {
+  function makeChunk(chunkNumber: number, payload: number[], transferId = "transfer-1"): FileChunk {
     return {
-      metadata: { fileName, chunkNumber },
+      metadata: { fileName: "document.bin", transferId, chunkNumber },
       payload: new Uint8Array(payload),
     };
   }
 
-  it("allocates a zero-filled buffer sized for the declared number of chunks", () => {
-    const engine = new FileReconstructorEngine();
-    const metadata: FileMetadata = { fileName: "document.bin", totalChunk: 3 };
+  it("reconstructs and emits a file when chunks arrive out of order", () => {
+    const engine = new FileReconstructorEngine(4);
+    const received = vi.fn();
+    engine.addEventListener("file-reconstructed", received);
+    engine.addFileToMap(makeMetadata());
 
-    engine.addFileToMap(metadata);
+    engine.addChunkToFile(makeChunk(2, [9, 10]));
+    engine.addChunkToFile(makeChunk(0, [1, 2, 3, 4]));
+    expect(received).not.toHaveBeenCalled();
+    engine.addChunkToFile(makeChunk(1, [5, 6, 7, 8]));
 
-    expect(reconstructedFile(engine, metadata.fileName)).toEqual(new Uint8Array(12));
+    expect(received).toHaveBeenCalledOnce();
+    expect((received.mock.calls[0]![0] as CustomEvent).detail).toEqual({
+      metadata: makeMetadata(),
+      data: new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).buffer,
+    });
   });
 
-  it("writes chunks into their positions regardless of arrival order", () => {
-    const engine = new FileReconstructorEngine();
-    engine.addFileToMap({ fileName: "document.bin", totalChunk: 3 });
+  it("accepts zero bytes as valid data and completes empty files", () => {
+    const engine = new FileReconstructorEngine(4);
+    const received = vi.fn();
+    engine.addEventListener("file-reconstructed", received);
+    engine.addFileToMap(makeMetadata({ fileSize: 0, totalChunk: 0 }));
 
-    engine.addChunkToFile(makeChunk("document.bin", 2, [9, 10]));
-    engine.addChunkToFile(makeChunk("document.bin", 0, [1, 2, 3, 4]));
-    engine.addChunkToFile(makeChunk("document.bin", 1, [5, 6]));
-
-    expect(reconstructedFile(engine, "document.bin")).toEqual(
-      new Uint8Array([1, 2, 3, 4, 5, 6, 0, 0, 9, 10, 0, 0]),
-    );
+    expect(received).toHaveBeenCalledOnce();
+    expect((received.mock.calls[0]![0] as CustomEvent).detail.data).toEqual(new ArrayBuffer(0));
   });
 
-  it("accepts zero bytes as valid binary payload", () => {
-    const engine = new FileReconstructorEngine();
-    engine.addFileToMap({ fileName: "document.bin", totalChunk: 1 });
+  it("rejects chunks with invalid size or unknown transfer IDs", () => {
+    const engine = new FileReconstructorEngine(4);
     const corrupted = vi.fn();
     engine.addEventListener("chunk-payload-corrupted", corrupted);
+    engine.addFileToMap(makeMetadata());
 
-    engine.addChunkToFile(makeChunk("document.bin", 0, [0, 7, 0]));
+    engine.addChunkToFile(makeChunk(0, [1, 2]));
+    engine.addChunkToFile(makeChunk(0, [1, 2, 3, 4], "unknown-transfer"));
 
-    expect(corrupted).not.toHaveBeenCalled();
-    expect(reconstructedFile(engine, "document.bin")).toEqual(new Uint8Array([0, 7, 0, 0]));
+    expect(corrupted).toHaveBeenCalledOnce();
   });
 
-  it("ignores chunks for files that have not been registered", () => {
-    const engine = new FileReconstructorEngine();
+  it("ignores duplicate chunks rather than corrupting completion accounting", () => {
+    const engine = new FileReconstructorEngine(4);
+    const received = vi.fn();
+    const duplicate = vi.fn();
+    engine.addEventListener("file-reconstructed", received);
+    engine.addEventListener("chunk-duplicate", duplicate);
+    engine.addFileToMap(makeMetadata({ fileSize: 8, totalChunk: 2 }));
+
+    engine.addChunkToFile(makeChunk(0, [1, 2, 3, 4]));
+    engine.addChunkToFile(makeChunk(0, [1, 2, 3, 4]));
+    engine.addChunkToFile(makeChunk(1, [5, 6, 7, 8]));
+
+    expect(received).toHaveBeenCalledOnce();
+    expect(duplicate).toHaveBeenCalledOnce();
+  });
+
+  it("reports metadata whose declared chunk count does not match file size", () => {
+    const engine = new FileReconstructorEngine(4);
     const corrupted = vi.fn();
-    engine.addEventListener("chunk-filename-corrupted", corrupted);
+    engine.addEventListener("file-metadata-corrupted", corrupted);
 
-    expect(() => engine.addChunkToFile(makeChunk("missing.bin", 0, [1, 2]))).not.toThrow();
-    expect(corrupted).not.toHaveBeenCalled();
-  });
+    engine.addFileToMap(makeMetadata({ totalChunk: 5 }));
 
-  it("replaces the reconstruction buffer when metadata is registered again", () => {
-    const engine = new FileReconstructorEngine();
-    engine.addFileToMap({ fileName: "document.bin", totalChunk: 1 });
-    engine.addChunkToFile(makeChunk("document.bin", 0, [1, 2]));
-
-    engine.addFileToMap({ fileName: "document.bin", totalChunk: 2 });
-
-    expect(reconstructedFile(engine, "document.bin")).toEqual(new Uint8Array(8));
+    expect(corrupted).toHaveBeenCalledOnce();
   });
 });
