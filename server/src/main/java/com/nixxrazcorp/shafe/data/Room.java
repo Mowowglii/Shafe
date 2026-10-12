@@ -5,9 +5,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.socket.WebSocketSession;
 
 public final class Room{
+    private static final Logger log = LoggerFactory.getLogger(Room.class);
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
     private ArrayList<FTSession> sessionList = new ArrayList<FTSession>();
@@ -55,10 +58,12 @@ public final class Room{
         lock.writeLock().lock();
         try {
             if (this.isFull){
+                log.debug("Rejected session {} because room is full", sessionId(ws));
                 return false;
             }
 
             if (ws == null){
+                log.warn("Rejected a null WebSocket session");
                 return false;
             }
 
@@ -87,6 +92,8 @@ public final class Room{
             // Increment active counter 
             this.activeCounter += 1;
             this.updateState();
+            log.debug("Added session {}; active={}, sleeping={}, capacity={}",
+                    sessionId(ws), activeCounter, sleepingCounter, capacity);
             return true;
         } finally {
             lock.writeLock().unlock();
@@ -97,6 +104,7 @@ public final class Room{
         lock.writeLock().lock();
         try{
             if (ws == null){
+                log.warn("Cannot remove a null WebSocket session");
                 return false;
             }
 
@@ -108,8 +116,11 @@ public final class Room{
                 this.activeCounter -= 1;
                 this.sleepingCounter += 1;
                 this.updateState();
+                log.debug("Marked session {} inactive; active={}, sleeping={}",
+                        sessionId(ws), activeCounter, sleepingCounter);
                 return true;
             }
+            log.debug("Session {} was not found or was already inactive", sessionId(ws));
             return false;
         } finally {
             lock.writeLock().unlock();
@@ -141,5 +152,9 @@ public final class Room{
             }
         }
         return null;
+    }
+
+    private String sessionId(WebSocketSession session) {
+        return session == null ? "unknown" : session.getId();
     }
 }
