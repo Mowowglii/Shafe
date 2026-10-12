@@ -78,6 +78,17 @@ code {
   overflow-wrap: anywhere;
 }
 
+.room-id-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.room-id-row p {
+  margin: 0;
+}
+
 [role="alert"] {
   color: #ff9b9b;
 }

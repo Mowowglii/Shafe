@@ -8,6 +8,8 @@ type RoomResponse = { roomId: string; role: string };
 const setupView = getElement<HTMLElement>("setup-view");
 const transferView = getElement<HTMLElement>("transfer-view");
 const createRoomButton = getElement<HTMLButtonElement>("create-room-btn");
+const copyRoomIdButton = getElement<HTMLButtonElement>("copy-room-id-btn");
+const copyRoomIdStatus = getElement<HTMLElement>("copy-room-id-status");
 const joinRoomForm = getElement<HTMLFormElement>("join-room-form");
 const roomIdInput = getElement<HTMLInputElement>("room-id-input");
 const currentRoomId = getElement<HTMLElement>("current-room-id");
@@ -55,6 +57,10 @@ sendFileButton.addEventListener("click", () => {
 
 leaveRoomButton.addEventListener("click", returnToSetup);
 
+copyRoomIdButton.addEventListener("click", () => {
+    void copyRoomId();
+});
+
 window.addEventListener("beforeunload", () => connectionManager?.close());
 
 async function createRoom(): Promise<void> {
@@ -99,6 +105,7 @@ async function startConnection(roomId: string, role: ConnectionRole): Promise<vo
     peerConnected = false;
     dataChannelOpen = false;
     currentRoomId.textContent = roomId;
+    copyRoomIdStatus.textContent = "";
     peerDisconnectNotice.hidden = true;
     peerDisconnectNotice.textContent = "";
     setupView.hidden = true;
@@ -211,6 +218,7 @@ function returnToSetup(): void {
     progressBar.value = 0;
     progressBar.max = 100;
     currentRoomId.textContent = "";
+    copyRoomIdStatus.textContent = "";
     peerDisconnectNotice.hidden = true;
     peerDisconnectNotice.textContent = "";
     clearError();
@@ -218,6 +226,22 @@ function returnToSetup(): void {
     transferView.hidden = true;
     setupView.hidden = false;
     setSetupBusy(false);
+}
+
+async function copyRoomId(): Promise<void> {
+    const roomId = currentRoomId.textContent?.trim();
+    if (!roomId) {
+        showError(new Error("There is no room ID to copy"));
+        return;
+    }
+    try {
+        await navigator.clipboard.writeText(roomId);
+        copyRoomIdStatus.textContent = "Room ID copied";
+    } catch (error) {
+        showError(new Error(
+            `Could not copy the room ID: ${error instanceof Error ? error.message : String(error)}`,
+        ));
+    }
 }
 
 function formatBytes(bytes: number): string {

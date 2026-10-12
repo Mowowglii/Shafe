@@ -4,6 +4,7 @@ import { expect, test } from "@playwright/test";
 test("creates a room, connects two peers, closes signaling, then transfers a file", async ({ browser }) => {
     const senderContext = await browser.newContext({ acceptDownloads: true });
     const receiverContext = await browser.newContext({ acceptDownloads: true });
+    await senderContext.grantPermissions(["clipboard-read", "clipboard-write"]);
     const sender = await senderContext.newPage();
     const receiver = await receiverContext.newPage();
     const fileName = "shafe-integration.txt";
@@ -16,14 +17,17 @@ test("creates a room, connects two peers, closes signaling, then transfers a fil
         await expect(roomIdElement).not.toBeEmpty({ timeout: 10_000 });
         const roomId = (await roomIdElement.textContent())?.trim();
         expect(roomId).toBeTruthy();
+        await sender.getByRole("button", { name: "Copy room ID" }).click();
+        await expect(sender.getByText("Room ID copied")).toBeVisible();
+        expect(await sender.evaluate(() => navigator.clipboard.readText())).toBe(roomId);
 
         await receiver.goto("/");
-        await receiver.getByLabel("Room ID").fill(roomId!);
+        await receiver.getByRole("textbox", { name: "Room ID" }).fill(roomId!);
         await receiver.getByRole("button", { name: "Join room" }).click();
 
         const readyStatus = "Peer-to-peer connection ready; signaling disconnected";
-        await expect(sender.getByRole("status")).toHaveText(readyStatus, { timeout: 60_000 });
-        await expect(receiver.getByRole("status")).toHaveText(readyStatus, { timeout: 60_000 });
+        await expect(sender.locator("#connection-status")).toHaveText(readyStatus, { timeout: 60_000 });
+        await expect(receiver.locator("#connection-status")).toHaveText(readyStatus, { timeout: 60_000 });
 
         await sender.locator("#file-input").setInputFiles({
             name: fileName,
@@ -44,7 +48,7 @@ test("creates a room, connects two peers, closes signaling, then transfers a fil
 
         await receiver.getByRole("button", { name: "Leave room" }).click();
         await expect(receiver.getByRole("button", { name: "Create a room" })).toBeVisible();
-        await expect(sender.getByRole("alert")).toContainText(/peer|connection/i, { timeout: 30_000 });
+        await expect(sender.locator("#peer-disconnect-notice")).toContainText(/peer|connection/i, { timeout: 30_000 });
         await expect(sender.getByRole("button", { name: "Send file" })).toBeDisabled();
     } finally {
         await senderContext.close();
