@@ -102,25 +102,47 @@ progress::-moz-progress-bar {
 }
 
 .transfer-complete {
-  display: grid;
-  width: 1.75rem;
-  height: 1.75rem;
-  flex: 0 0 auto;
-  place-items: center;
-  border-radius: 50%;
-  color: #06251e;
-  background: #34d399;
-  box-shadow: 0 0 0 3px rgb(52 211 153 / 18%);
+  display: flex;
+  max-width: 100%;
+  align-items: center;
+  gap: 0.65rem;
+  color: #6ee7b7;
+  font-weight: 650;
 }
 
 .transfer-complete svg {
+  box-sizing: content-box;
   width: 1.15rem;
   height: 1.15rem;
+  flex: 0 0 auto;
+  padding: 0.3rem;
+  border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 0 3px rgb(52 211 153 / 18%);
+  color: #06251e;
   fill: none;
   stroke: currentColor;
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 2.5;
+}
+
+#transfer-complete-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#transfer-complete-label a {
+  color: inherit;
+  font: inherit;
+  text-decoration: none;
+}
+
+#transfer-complete-label a:hover,
+#transfer-complete-label a:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
 }
 
 code {

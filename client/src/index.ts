@@ -18,7 +18,7 @@ const fileInput = getElement<HTMLInputElement>("file-input");
 const sendFileButton = getElement<HTMLButtonElement>("send-file-btn");
 const progressBar = getElement<HTMLProgressElement>("progress-bar");
 const transferComplete = getElement<HTMLElement>("transfer-complete");
-const receivedFiles = getElement<HTMLUListElement>("received-files");
+const transferCompleteLabel = getElement<HTMLElement>("transfer-complete-label");
 const peerDisconnectNotice = getElement<HTMLElement>("peer-disconnect-notice");
 const leaveRoomButton = getElement<HTMLButtonElement>("leave-room-btn");
 const appError = getElement<HTMLElement>("app-error");
@@ -49,6 +49,7 @@ sendFileButton.addEventListener("click", () => {
     try {
         progressBar.hidden = false;
         transferComplete.hidden = true;
+        transferCompleteLabel.textContent = "";
         progressBar.value = 0;
         connectionManager.sendFile(file);
         sendFileButton.disabled = true;
@@ -179,13 +180,19 @@ async function startConnection(roomId: string, role: ConnectionRole): Promise<vo
         progressBar.value = progressBar.max;
         progressBar.hidden = true;
         transferComplete.hidden = false;
-        setStatus(`${detail.fileName} sent successfully`);
+        transferCompleteLabel.textContent = `Transfer complete: ${detail.fileName}`;
+        setStatus(`File transfer completed: ${detail.fileName}`);
         sendFileButton.disabled = !fileInput.files?.[0];
     });
     connectionManager.addEventListener("file-received", (event) => {
         progressBar.hidden = true;
         transferComplete.hidden = false;
-        addReceivedFile((event as CustomEvent<ReceivedFile>).detail);
+        const file = (event as CustomEvent<ReceivedFile>).detail;
+        const downloadLink = addReceivedFile(file);
+        transferCompleteLabel.replaceChildren(
+            document.createTextNode("Received: "),
+            downloadLink.cloneNode(true),
+        );
     });
 }
 
@@ -199,16 +206,14 @@ async function readRoomResponse(response: Response): Promise<RoomResponse> {
     return { roomId: body.roomId, role: body.role };
 }
 
-function addReceivedFile(file: ReceivedFile): void {
+function addReceivedFile(file: ReceivedFile): HTMLAnchorElement {
     const link = document.createElement("a");
     link.href = URL.createObjectURL(file.blob);
     receivedObjectUrls.push(link.href);
     link.download = file.metadata.fileName;
     link.textContent = `${file.metadata.fileName} (${formatBytes(file.metadata.fileSize)})`;
-    const listItem = document.createElement("li");
-    listItem.append(link);
-    receivedFiles.append(listItem);
     setStatus(`Received ${file.metadata.fileName}`);
+    return link;
 }
 
 function returnToSetup(): void {
@@ -219,7 +224,6 @@ function returnToSetup(): void {
     for (const objectUrl of receivedObjectUrls.splice(0)) {
         URL.revokeObjectURL(objectUrl);
     }
-    receivedFiles.replaceChildren();
     fileInput.value = "";
     roomIdInput.value = "";
     sendFileButton.disabled = true;
@@ -227,6 +231,7 @@ function returnToSetup(): void {
     progressBar.max = 100;
     progressBar.hidden = false;
     transferComplete.hidden = true;
+    transferCompleteLabel.textContent = "";
     currentRoomId.textContent = "";
     copyRoomIdStatus.textContent = "";
     peerDisconnectNotice.hidden = true;
