@@ -5,9 +5,61 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#18231f" />
     <title>Shafe — Peer-to-peer file transfer</title>
+    <link rel="preload" as="image" href="/logo-shafe.png" />
     <style>
+      html,
+      body {
+        min-height: 100%;
+        margin: 0;
+        background: #18231f;
+      }
+
       body.intro-pending #app-shell {
         visibility: hidden;
+      }
+
+      body.intro-pending #intro-reveal {
+        position: fixed;
+        z-index: 10;
+        inset: 0;
+        overflow: hidden;
+        background: #18231f;
+      }
+
+      body.intro-pending .intro-door {
+        position: absolute;
+        inset-block: 0;
+        width: 50%;
+        background: linear-gradient(135deg, #24352d, #1b2923 70%);
+      }
+
+      body.intro-pending .intro-door--left {
+        left: 0;
+      }
+
+      body.intro-pending .intro-door--right {
+        right: 0;
+      }
+
+      body.intro-pending .intro-locker-badge {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        display: grid;
+        width: clamp(10rem, 28vw, 16rem);
+        aspect-ratio: 1;
+        place-items: center;
+        border: 1px solid #597260;
+        border-radius: 1.25rem;
+        background: linear-gradient(145deg, #2c4035, #1d2b24);
+        transform: translate(-50%, -50%);
+      }
+
+      body.intro-pending .intro-logo {
+        display: block;
+        width: 84%;
+        height: 84%;
+        object-fit: contain;
       }
     </style>
   </head>
