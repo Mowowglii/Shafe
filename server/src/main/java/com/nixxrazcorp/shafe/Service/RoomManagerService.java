@@ -27,6 +27,12 @@ public class RoomManagerService {
     private final Duration roomTtl;
     private final Duration warningLead;
 
+    public enum JoinResult {
+        JOINED,
+        ROOM_NOT_FOUND,
+        ROOM_FULL
+    }
+
     public RoomManagerService(
             @Value("${shafe.rooms.ttl:15m}") Duration roomTtl,
             @Value("${shafe.rooms.warning-before-expiration:1m}") Duration warningLead) {
@@ -55,15 +61,15 @@ public class RoomManagerService {
         return room;
     }
 
-    public boolean joinRoom(String roomId, WebSocketSession session) {
+    public JoinResult joinRoom(String roomId, WebSocketSession session) {
         Room room = activeRooms.get(roomId);
         if (room == null) {
             log.warn("Cannot join missing room {} (session {})", roomId, sessionId(session));
-            return false;
+            return JoinResult.ROOM_NOT_FOUND;
         }
         if (room.isFull()) {
             log.warn("Cannot join full room {} (session {})", roomId, sessionId(session));
-            return false;
+            return JoinResult.ROOM_FULL;
         }
         boolean joined = room.addSession(session, Instant.now(), roomTtl);
         if (joined) {
@@ -71,13 +77,15 @@ public class RoomManagerService {
             if (room.isExpirationWarningSent()) {
                 sendExpirationWarning(roomId, room, List.of(session));
             }
+            return JoinResult.JOINED;
         } else {
             log.warn("Session {} could not join room {}", sessionId(session), roomId);
             if (room.isExpired()) {
                 expireRoom(roomId, room);
+                return JoinResult.ROOM_NOT_FOUND;
             }
+            return JoinResult.ROOM_FULL;
         }
-        return joined;
     }
 
     public void leaveRoom(String roomId, WebSocketSession session) {

@@ -103,4 +103,31 @@ public class SignalingIntegrationTest {
             }
         }
     }
+
+    @Test
+    public void testJoiningMissingRoomIsRejected() throws Exception {
+        String url = "ws://localhost:" + port + "/signal?roomId=missing-room";
+        BlockingQueue<org.springframework.web.socket.CloseStatus> closeStatuses = new ArrayBlockingQueue<>(1);
+        StandardWebSocketClient client = new StandardWebSocketClient();
+
+        WebSocketSession session = client.execute(new TextWebSocketHandler() {
+            @Override
+            public void afterConnectionClosed(WebSocketSession closedSession,
+                    org.springframework.web.socket.CloseStatus status) {
+                closeStatuses.add(status);
+            }
+        }, url).get(WS_CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+
+        try {
+            org.springframework.web.socket.CloseStatus status =
+                    closeStatuses.poll(WS_CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            assertNotNull(status, "Server did not close the WebSocket for a missing room");
+            assertEquals(4404, status.getCode());
+            assertEquals("Room not found", status.getReason());
+        } finally {
+            if (session.isOpen()) {
+                session.close();
+            }
+        }
+    }
 }

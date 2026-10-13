@@ -12,11 +12,14 @@ import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import com.nixxrazcorp.shafe.Service.RoomManagerService;
+import com.nixxrazcorp.shafe.Service.RoomManagerService.JoinResult;
 
 
 @Component
 public class SignalingHandler extends TextWebSocketHandler{
     private static final Logger log = LoggerFactory.getLogger(SignalingHandler.class);
+    private static final CloseStatus ROOM_NOT_FOUND = new CloseStatus(4404, "Room not found");
+    private static final CloseStatus ROOM_FULL = new CloseStatus(4409, "Room is full");
 
     private final RoomManagerService roomManagerService;
 
@@ -29,9 +32,16 @@ public class SignalingHandler extends TextWebSocketHandler{
         String roomId = recoverRoomId(session);
         log.debug("WebSocket connection established: session={}, room={}", session.getId(), roomId);
         if (roomId != null){
-            // Note : Modify the RoomManagerService to throw errors and replace this block by a try{...}catch...
-            if (!roomManagerService.joinRoom(roomId, session)){
-                log.warn("WebSocket session {} was rejected from room {}", session.getId(), roomId);
+            JoinResult result = roomManagerService.joinRoom(roomId, session);
+            if (result != JoinResult.JOINED) {
+                log.warn("WebSocket session {} was rejected from room {}: {}",
+                        session.getId(), roomId, result);
+                try {
+                    session.close(result == JoinResult.ROOM_NOT_FOUND ? ROOM_NOT_FOUND : ROOM_FULL);
+                } catch (IOException e) {
+                    log.warn("Failed to close rejected WebSocket session {} for room {}",
+                            session.getId(), roomId, e);
+                }
             }
         } else {
             log.warn("WebSocket session {} connected without a valid roomId query parameter", session.getId());
