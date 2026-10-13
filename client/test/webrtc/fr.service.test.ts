@@ -62,6 +62,20 @@ describe("FileReconstructorEngine", () => {
     expect((received.mock.calls[0]![0] as CustomEvent).detail.data).toEqual(new ArrayBuffer(0));
   });
 
+  it("discards an incomplete transfer when cancelled", () => {
+    const engine = new FileReconstructorEngine(4);
+    const reconstructed = vi.fn();
+    engine.addEventListener("file-reconstructed", reconstructed);
+    engine.addFileToMap(makeMetadata());
+    engine.addChunkToFile(makeChunk(0, [1, 2, 3, 4]));
+
+    expect(engine.cancelTransfer("transfer-1")).toEqual(makeMetadata());
+    expect(engine.cancelTransfer("transfer-1")).toBeNull();
+    engine.addChunkToFile(makeChunk(1, [5, 6, 7, 8]));
+
+    expect(reconstructed).not.toHaveBeenCalled();
+  });
+
   it("rejects chunks with invalid size or unknown transfer IDs", () => {
     const engine = new FileReconstructorEngine(4);
     const corrupted = vi.fn();

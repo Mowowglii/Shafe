@@ -1,5 +1,5 @@
 import { DEFAULT_FILE_CHUNK_SIZE, type FileMetadata, type FileTransferRequest, type FileTransferResponse } from "../types/filehandling.js";
-import { decodeFileChunk, decodeFileMetadata, encodeFileChunk, encodeFileMetadata } from "../webrtc/filetransfer.protocol.js";
+import { decodeFileChunk, decodeFileMetadata, decodeTransferCancellation, encodeFileChunk, encodeFileMetadata } from "../webrtc/filetransfer.protocol.js";
 import { FileChunkingEngine } from "../webrtc/filechunking.service.js";
 import { FileReconstructorEngine } from "../webrtc/filereconstructor.service.js";
 
@@ -13,7 +13,9 @@ const chunker = new FileChunkingEngine();
 const reconstructor = new FileReconstructorEngine();
 let nextPacketId = 0;
 let sendInProgress = false;
+let activeSend: { transferId: string; fileName: string; controller: AbortController } | null = null;
 let receiveQueue = Promise.resolve();
+const cancelledTransfers = new Set<string>();
 const pendingAcknowledgements = new Map<number, {
     resolve: () => void;
     reject: (error: Error) => void;
@@ -55,7 +57,10 @@ reconstructor.addEventListener("chunk-duplicate", () => {
 workerScope.addEventListener("message", ({ data }) => {
     switch (data.type) {
         case "send-file":
-            void sendFile(data.file);
+            void sendFile(data.file, data.transferId);
+            break;
+        case "cancel-transfer":
+            cancelOutgoingTransfer(data.transferId);
             break;
         case "receive-data":
             receiveQueue = receiveQueue.then(() => receiveData(data.data)).catch((error: unknown) => {
@@ -73,14 +78,15 @@ workerScope.addEventListener("message", ({ data }) => {
     }
 });
 
-async function sendFile(file: File): Promise<void> {
+async function sendFile(file: File, transferId: string): Promise<void> {
     if (sendInProgress) {
         reportError("send", new Error("A file transfer is already in progress"));
         return;
     }
 
     sendInProgress = true;
-    const transferId = crypto.randomUUID();
+    const controller = new AbortController();
+    activeSend = { transferId, fileName: file.name, controller };
     let sentChunks = 0;
     try {
         const metadata = await chunker.chunkFile(
@@ -98,6 +104,7 @@ async function sendFile(file: File): Promise<void> {
                 });
             },
             async (fileMetadata) => sendPacket(encodeFileMetadata(fileMetadata)),
+            controller.signal,
         );
         workerScope.postMessage({
             type: "file-send-complete",
@@ -105,9 +112,49 @@ async function sendFile(file: File): Promise<void> {
             transferId: metadata.transferId,
         });
     } catch (error) {
-        reportError("send", error);
+        if (controller.signal.aborted) {
+            workerScope.postMessage({
+                type: "file-transfer-cancelled",
+                fileName: file.name,
+                transferId,
+            });
+        } else {
+            reportError("send", error);
+        }
     } finally {
+        if (activeSend?.transferId === transferId) {
+            activeSend = null;
+        }
         sendInProgress = false;
+    }
+}
+
+function abortOutgoingTransfer(transferId: string): void {
+    if (activeSend?.transferId !== transferId) {
+        return;
+    }
+    activeSend.controller.abort();
+    for (const [packetId, acknowledgement] of pendingAcknowledgements) {
+        acknowledgement.reject(new DOMException("File transfer was cancelled", "AbortError"));
+        pendingAcknowledgements.delete(packetId);
+    }
+}
+
+function cancelOutgoingTransfer(transferId: string): void {
+    if (activeSend?.transferId === transferId) {
+        abortOutgoingTransfer(transferId);
+        workerScope.postMessage({ type: "send-cancel-notification", transferId });
+        return;
+    }
+    const metadata = reconstructor.cancelTransfer(transferId);
+    if (metadata) {
+        cancelledTransfers.add(transferId);
+        workerScope.postMessage({
+            type: "file-transfer-cancelled",
+            fileName: metadata.fileName,
+            transferId,
+        });
+        workerScope.postMessage({ type: "send-cancel-notification", transferId });
     }
 }
 
@@ -127,10 +174,28 @@ async function sendPacket(data: string | ArrayBuffer): Promise<void> {
 
 async function receiveData(data: string | ArrayBuffer): Promise<void> {
     if (typeof data === "string") {
+        const cancelledTransferId = decodeTransferCancellation(data);
+        if (cancelledTransferId) {
+            if (activeSend?.transferId === cancelledTransferId) {
+                abortOutgoingTransfer(cancelledTransferId);
+                return;
+            }
+            const metadata = reconstructor.cancelTransfer(cancelledTransferId);
+            if (metadata) {
+                cancelledTransfers.add(cancelledTransferId);
+                workerScope.postMessage({
+                    type: "file-transfer-cancelled",
+                    fileName: metadata.fileName,
+                    transferId: cancelledTransferId,
+                });
+            }
+            return;
+        }
         const metadata = decodeFileMetadata(data);
         if (!metadata) {
             throw new Error("Received invalid file metadata");
         }
+        cancelledTransfers.delete(metadata.transferId);
         reconstructor.addFileToMap(metadata);
         return;
     }
@@ -138,6 +203,9 @@ async function receiveData(data: string | ArrayBuffer): Promise<void> {
     const chunk = decodeFileChunk(data);
     if (!chunk) {
         throw new Error("Received an invalid file chunk");
+    }
+    if (cancelledTransfers.has(chunk.metadata.transferId)) {
+        return;
     }
     reconstructor.addChunkToFile(chunk);
 }

@@ -40,7 +40,7 @@ describe("FileTransferManager", () => {
     const worker = new MockWorker();
     const manager = new FileTransferManager(worker as unknown as Worker);
 
-    expect(() => manager.sendFile(new File(["data"], "sample.txt"))).toThrow(
+    expect(() => manager.sendFile(new File(["data"], "sample.txt"), "transfer-1")).toThrow(
       "Cannot send a file before the WebRTC data channel is open",
     );
     expect(worker.messages).toHaveLength(0);
@@ -51,19 +51,41 @@ describe("FileTransferManager", () => {
     const { manager, worker, channel } = makeManager();
     const file = new File(["data"], "sample.txt", { type: "text/plain" });
 
-    manager.sendFile(file);
+    manager.sendFile(file, "transfer-1");
     channel.dispatchEvent(Object.assign(new Event("message"), {
       data: JSON.stringify({ type: "file-metadata" }),
     }));
     await Promise.resolve();
 
     expect(channel.binaryType).toBe("arraybuffer");
-    expect(worker.messages[0]?.message).toEqual({ type: "send-file", file });
+    expect(worker.messages[0]?.message).toEqual({ type: "send-file", file, transferId: "transfer-1" });
     expect(worker.messages[1]?.message).toEqual({
       type: "receive-data",
       data: JSON.stringify({ type: "file-metadata" }),
     });
 
+    manager.close();
+  });
+
+  it("posts a cancellation request and forwards cancellation notifications", () => {
+    const { manager, worker, channel } = makeManager();
+    const cancelled = vi.fn();
+    manager.addEventListener("file-transfer-cancelled", cancelled);
+
+    manager.cancelTransfer("transfer-1");
+    worker.emit({ type: "send-cancel-notification", transferId: "transfer-1" });
+    worker.emit({
+      type: "file-transfer-cancelled",
+      fileName: "sample.txt",
+      transferId: "transfer-1",
+    });
+
+    expect(worker.messages[0]?.message).toEqual({ type: "cancel-transfer", transferId: "transfer-1" });
+    expect(channel.send).toHaveBeenCalledWith(JSON.stringify({
+      type: "file-transfer-cancel",
+      transferId: "transfer-1",
+    }));
+    expect((cancelled.mock.calls[0]?.[0] as CustomEvent).detail.fileName).toBe("sample.txt");
     manager.close();
   });
 

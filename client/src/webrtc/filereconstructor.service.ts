@@ -75,6 +75,15 @@ export class FileReconstructorEngine extends EventTarget {
         }
     }
 
+    public cancelTransfer(transferId: string): FileMetadata | null {
+        const activeFile = this.fileMap.get(transferId);
+        if (!activeFile) {
+            return null;
+        }
+        this.fileMap.delete(transferId);
+        return activeFile.metadata;
+    }
+
     private completeFile(activeFile: ActiveFile): void {
         this.fileMap.delete(activeFile.metadata.transferId);
         this.dispatchEvent(new CustomEvent("file-reconstructed", {

@@ -30,8 +30,12 @@ export class ConnectionManager extends EventTarget {
         this.bindWebSocketService(role);
     }
 
-    sendFile(file: File): void {
-        this.fileTransferManager.sendFile(file);
+    sendFile(file: File, transferId: string): void {
+        this.fileTransferManager.sendFile(file, transferId);
+    }
+
+    cancelTransfer(transferId: string): void {
+        this.fileTransferManager.cancelTransfer(transferId);
     }
 
     close(): void {
@@ -88,6 +92,7 @@ export class ConnectionManager extends EventTarget {
             "file-send-complete",
             "file-send-progress",
             "file-receive-progress",
+            "file-transfer-cancelled",
             "file-transfer-error",
             "data-channel-error",
         ]) {

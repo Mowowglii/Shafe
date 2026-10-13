@@ -4,6 +4,7 @@ import type {
     FileTransferResponse,
 } from "../types/filehandling.js";
 import { DataChannelManager } from "./datachannelmanager.js";
+import { encodeTransferCancellation } from "./filetransfer.protocol.js";
 
 export type ReceivedFile = {
     metadata: FileMetadata;
@@ -47,11 +48,15 @@ export class FileTransferManager extends EventTarget {
         this.dispatchEvent(new CustomEvent("data-channel-bound"));
     }
 
-    sendFile(file: File): void {
+    sendFile(file: File, transferId = crypto.randomUUID()): void {
         if (!this.dataChannel || this.dataChannel.readyState !== "open") {
             throw new Error("Cannot send a file before the WebRTC data channel is open");
         }
-        this.worker.postMessage({ type: "send-file", file } satisfies FileTransferRequest);
+        this.worker.postMessage({ type: "send-file", file, transferId } satisfies FileTransferRequest);
+    }
+
+    cancelTransfer(transferId: string): void {
+        this.worker.postMessage({ type: "cancel-transfer", transferId } satisfies FileTransferRequest);
     }
 
     close(): void {
@@ -71,6 +76,12 @@ export class FileTransferManager extends EventTarget {
                 break;
             case "file-send-complete":
                 this.dispatchEvent(new CustomEvent("file-send-complete", { detail: response }));
+                break;
+            case "file-transfer-cancelled":
+                this.dispatchEvent(new CustomEvent("file-transfer-cancelled", { detail: response }));
+                break;
+            case "send-cancel-notification":
+                this.sendCancellationNotification(response.transferId);
                 break;
             case "file-send-progress":
                 this.dispatchEvent(new CustomEvent("file-send-progress", { detail: response }));
@@ -157,6 +168,22 @@ export class FileTransferManager extends EventTarget {
                 packetId: response.packetId,
                 reason: error instanceof Error ? error.message : String(error),
             } satisfies FileTransferRequest);
+        }
+    }
+
+    private sendCancellationNotification(transferId: string): void {
+        try {
+            if (!this.dataChannel || this.dataChannel.readyState !== "open") {
+                throw new Error("WebRTC data channel is not open");
+            }
+            this.dataChannel.send(encodeTransferCancellation(transferId));
+        } catch (error) {
+            this.dispatchEvent(new CustomEvent("file-transfer-error", {
+                detail: {
+                    operation: "cancel",
+                    reason: error instanceof Error ? error.message : String(error),
+                },
+            }));
         }
     }
 }

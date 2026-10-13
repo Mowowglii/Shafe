@@ -47,6 +47,25 @@ test("creates a room, connects two peers, closes signaling, then transfers a fil
             });
             observer.observe(status, { childList: true, characterData: true, subtree: true });
         });
+        const cancelFileName = "cancelled-large-file.bin";
+        await sender.locator("#file-input").setInputFiles({
+            name: cancelFileName,
+            mimeType: "application/octet-stream",
+            buffer: Buffer.alloc(32 * 1024 * 1024, 0x5a),
+        });
+        await sender.getByRole("button", { name: "Send file" }).click();
+        await expect(receiver.getByRole("button", { name: "Cancel transfer" })).toBeVisible({ timeout: 30_000 });
+        await sender.getByRole("button", { name: "Cancel transfer" }).click();
+        await expect(sender.locator("#connection-status")).toHaveText(`Transfer cancelled: ${cancelFileName}`, { timeout: 30_000 });
+        await expect(receiver.locator("#connection-status")).toHaveText(`Transfer cancelled: ${cancelFileName}`, { timeout: 30_000 });
+        await expect(sender.getByRole("button", { name: "Cancel transfer" })).toBeHidden();
+        await expect(receiver.getByRole("button", { name: "Cancel transfer" })).toBeHidden();
+
+        await sender.locator("#file-input").setInputFiles({
+            name: fileName,
+            mimeType: "text/plain",
+            buffer: Buffer.from(fileContents),
+        });
         await sender.getByRole("button", { name: "Send file" }).click();
         await expect(sender.locator("#progress-bar")).toBeHidden({ timeout: 30_000 });
         await expect(sender.locator("#transfer-complete")).toBeVisible();

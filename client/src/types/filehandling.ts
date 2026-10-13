@@ -20,7 +20,8 @@ export type FileMetadata = {
 }
 
 export type FileTransferRequest =
-    | { type: "send-file"; file: File }
+    | { type: "send-file"; file: File; transferId: string }
+    | { type: "cancel-transfer"; transferId: string }
     | { type: "receive-data"; data: string | ArrayBuffer }
     | { type: "send-ack"; packetId: number }
     | { type: "send-failed"; packetId: number; reason: string };
@@ -30,6 +31,8 @@ export type FileTransferResponse =
     | { type: "file-send-progress"; fileName: string; transferId: string; sentChunks: number; totalChunks: number }
     | { type: "file-receive-progress"; fileName: string; transferId: string; receivedChunks: number; totalChunks: number }
     | { type: "file-send-complete"; fileName: string; transferId: string }
+    | { type: "file-transfer-cancelled"; fileName: string; transferId: string }
+    | { type: "send-cancel-notification"; transferId: string }
     | { type: "file-received"; metadata: FileMetadata; data: ArrayBuffer }
     | { type: "file-transfer-error"; operation: string; reason: string };
 

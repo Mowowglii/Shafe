@@ -41,7 +41,9 @@ export class FileChunkingEngine extends EventTarget{
         transferId = crypto.randomUUID(),
         onChunk?: (chunk: FileChunk) => Promise<void>,
         onMetadata?: (metadata: FileMetadata) => Promise<void>,
+        signal?: AbortSignal,
     ): Promise<FileMetadata> {
+        this.throwIfAborted(signal);
         const fileMetadata = this.getFileMetaData(file, transferId);
         this.dispatchEvent(new CustomEvent<FileMetadata>("file-metadata-recovered", { detail: fileMetadata }));
         await onMetadata?.(fileMetadata);
@@ -51,9 +53,11 @@ export class FileChunkingEngine extends EventTarget{
         let chunkValues = new Uint8Array(this.maxChunkSize);
 
         for await (const streamChunk of file.stream()){
+            this.throwIfAborted(signal);
             let streamOffset = 0;
 
             while (streamOffset < streamChunk.length) {
+                this.throwIfAborted(signal);
                 const streamSpace = streamChunk.length - streamOffset;
                 const chunkSpace = chunkValues.length - chunkOffset;
 
@@ -93,6 +97,7 @@ export class FileChunkingEngine extends EventTarget{
             }
         }
 
+        this.throwIfAborted(signal);
         if (chunkOffset > 0) {
             await this.emitChunk(
                 this.setChunkMetadata(file.name, transferId, chunkNumber),
@@ -101,6 +106,12 @@ export class FileChunkingEngine extends EventTarget{
             );
         }
         return fileMetadata;
+    }
+
+    private throwIfAborted(signal?: AbortSignal): void {
+        if (signal?.aborted) {
+            throw new DOMException("File transfer was cancelled", "AbortError");
+        }
     }
 
 }

@@ -8,6 +8,22 @@ import type {
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
+export function encodeTransferCancellation(transferId: string): string {
+    return JSON.stringify({ type: "file-transfer-cancel", transferId });
+}
+
+export function decodeTransferCancellation(data: string): string | null {
+    let packet: unknown;
+    try {
+        packet = JSON.parse(data);
+    } catch {
+        return null;
+    }
+    if (!isRecord(packet) || packet.type !== "file-transfer-cancel"
+        || typeof packet.transferId !== "string" || packet.transferId.length === 0) return null;
+    return packet.transferId;
+}
+
 export function encodeFileMetadata(metadata: FileMetadata): string {
     const packet: FileMetadataPacket = { type: "file-metadata", metadata };
     return JSON.stringify(packet);
