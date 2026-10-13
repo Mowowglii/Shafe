@@ -9,6 +9,66 @@ body {
   min-width: 320px;
 }
 
+.intro-reveal {
+  position: fixed;
+  z-index: 10;
+  inset: 0;
+  overflow: hidden;
+  background: #18231f;
+}
+
+.intro-panel {
+  position: absolute;
+  inset-block: 0;
+  width: 50%;
+  background: #18231f;
+  animation-duration: 820ms;
+  animation-delay: 420ms;
+  animation-fill-mode: forwards;
+  animation-timing-function: cubic-bezier(0.76, 0, 0.24, 1);
+}
+
+.intro-panel--left {
+  left: 0;
+  animation-name: intro-open-left;
+}
+
+.intro-panel--right {
+  right: 0;
+  animation-name: intro-open-right;
+}
+
+.intro-logo {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 50%;
+  width: clamp(6rem, 16vw, 9rem);
+  height: clamp(6rem, 16vw, 9rem);
+  object-fit: contain;
+  transform: translate(-50%, -50%);
+  animation: intro-logo-fade 380ms ease-in 300ms forwards;
+}
+
+@keyframes intro-open-left {
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes intro-open-right {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes intro-logo-fade {
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.92);
+  }
+}
+
 .app-shell {
   box-sizing: border-box;
   margin: 4rem auto;
@@ -407,4 +467,10 @@ code {
 
 [hidden] {
   display: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro-reveal {
+    display: none;
+  }
 }

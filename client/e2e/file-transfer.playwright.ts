@@ -3,7 +3,12 @@ import { expect, test } from "@playwright/test";
 
 test("returns to setup when joining a nonexistent room", async ({ page }) => {
     const roomId = "00000000-0000-0000-0000-000000000000";
+    await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.goto("/");
+    const introReveal = page.locator("#intro-reveal");
+    await expect(introReveal).toBeVisible();
+    await expect(introReveal.locator(".intro-panel")).toHaveCount(2);
+    await expect(introReveal).toHaveCount(0, { timeout: 5_000 });
     await page.getByRole("textbox", { name: "Room ID" }).fill(roomId);
     await page.getByRole("button", { name: "Join room" }).click();
 
