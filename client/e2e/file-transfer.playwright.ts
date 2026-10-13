@@ -8,6 +8,7 @@ test("creates a room, connects two peers, closes signaling, then transfers a fil
     const sender = await senderContext.newPage();
     const receiver = await receiverContext.newPage();
     const fileName = "shafe-integration.txt";
+    const longFileName = `${"very-long-file-name-".repeat(8)}.txt`;
     const fileContents = "P2P file transfer survives signaling shutdown.";
 
     try {
@@ -85,7 +86,7 @@ test("creates a room, connects two peers, closes signaling, then transfers a fil
             mimeType: "text/plain",
             buffer: Buffer.from(fileContents),
         }, {
-            name: "second-sender-file.txt",
+            name: longFileName,
             mimeType: "text/plain",
             buffer: Buffer.from("Second file sent by sender."),
         }]);
@@ -96,9 +97,23 @@ test("creates a room, connects two peers, closes signaling, then transfers a fil
         await expect(senderRows).toHaveCount(3);
         await expect(receiverRows).toHaveCount(3);
         await expect(senderRows.filter({ hasText: fileName }).locator(".transfer-complete")).toBeVisible({ timeout: 30_000 });
-        await expect(senderRows.filter({ hasText: "second-sender-file.txt" }).locator(".transfer-complete")).toBeVisible({ timeout: 30_000 });
+        await expect(senderRows.filter({ hasText: longFileName }).locator(".transfer-complete")).toBeVisible({ timeout: 30_000 });
         await expect(receiver.locator(`[data-direction="send"]`)).toHaveCount(2);
         await expect(sender.locator(`[data-direction="receive"]`)).toHaveCount(2);
+        const longNameRow = senderRows.filter({ hasText: longFileName });
+        const leftColumnBounds = await longNameRow.evaluate((row) => {
+            const journal = document.querySelector(".connection-journal");
+            if (!journal) {
+                throw new Error("Connection events panel is missing");
+            }
+            const rowBounds = row.getBoundingClientRect();
+            const journalBounds = journal.getBoundingClientRect();
+            return {
+                rowRight: rowBounds.right,
+                journalLeft: journalBounds.left,
+            };
+        });
+        expect(leftColumnBounds.rowRight).toBeLessThanOrEqual(leftColumnBounds.journalLeft);
         await expect.poll(() => receiver.locator("#connection-journal-list").evaluate((list) => {
             return list.scrollTop + list.clientHeight >= list.scrollHeight - 1;
         })).toBe(true);

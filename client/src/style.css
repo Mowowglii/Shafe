@@ -50,6 +50,14 @@ section {
   gap: 0.8rem;
 }
 
+.transfer-main > *,
+.transfer-list,
+.transfer-item {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+}
+
 .connection-journal {
   position: sticky;
   top: 1rem;
@@ -214,6 +222,7 @@ button:disabled {
 
 .transfer-list {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.8rem;
   margin: 0;
   padding: 0;
@@ -222,6 +231,7 @@ button:disabled {
 
 .transfer-item {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.55rem;
   padding: 0.9rem;
   border: 1px solid #34445d;
@@ -230,11 +240,16 @@ button:disabled {
 }
 
 .transfer-file-name {
+  min-width: 0;
   overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .transfer-status {
+  min-width: 0;
   color: #b7c5d8;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 progress {
@@ -266,6 +281,7 @@ progress::-moz-progress-bar {
 
 .transfer-complete {
   display: flex;
+  min-width: 0;
   max-width: 100%;
   align-items: center;
   gap: 0.65rem;
@@ -291,6 +307,7 @@ progress::-moz-progress-bar {
 }
 
 .transfer-complete-label {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
