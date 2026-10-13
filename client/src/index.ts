@@ -191,6 +191,13 @@ async function startConnection(roomId: string, role: ConnectionRole): Promise<vo
         const seconds = (event as CustomEvent<{ secondsRemaining: number }>).detail.secondsRemaining;
         setStatus(`Signaling room expires in ${seconds} seconds`);
     });
+    connectionManager.addEventListener("room-rejected", (event) => {
+        const detail = (event as CustomEvent<{ message: string }>).detail;
+        const attemptedRoomId = currentRoomId.textContent?.trim() ?? "";
+        returnToSetup();
+        roomIdInput.value = attemptedRoomId;
+        showError(new Error(detail.message));
+    });
     connectionManager.addEventListener("connection-error", (event) => {
         const detail = (event as CustomEvent<{ operation?: string; reason?: string }>).detail;
         showError(new Error([detail.operation, detail.reason].filter(Boolean).join(": ") || "Connection failed"));

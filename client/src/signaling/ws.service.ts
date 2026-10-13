@@ -1,6 +1,9 @@
 import type { SignalingMessage } from "../types/sigmessage.js";
 import { parseInto } from "../utils/parseHelper.js";
 
+const ROOM_NOT_FOUND_CLOSE_CODE = 4404;
+const ROOM_FULL_CLOSE_CODE = 4409;
+
 export class WebSocketService extends EventTarget{
     private ws : WebSocket | null = null;
     private pendingMessage : SignalingMessage[] = [];
@@ -70,6 +73,13 @@ export class WebSocketService extends EventTarget{
             if (this.reconnectResetTimer !== null) {
                 clearTimeout(this.reconnectResetTimer);
                 this.reconnectResetTimer = null;
+            }
+            const rejectionMessage = this.getRoomRejectionMessage(event.code);
+            if (rejectionMessage) {
+                this.isClosedByUser = true;
+                this.dispatchEvent(new CustomEvent("room-rejected", {
+                    detail: { code: event.code, message: rejectionMessage },
+                }));
             }
             // check intentional close and close code
             if (!this.isClosedByUser && this.shouldRetryAfterClose(event)){
@@ -142,6 +152,16 @@ export class WebSocketService extends EventTarget{
     private shouldRetryAfterClose(event: CloseEvent): boolean {
         // abnormal closure, server not available, handshake rejected, socket died
         return event.code === 1006 || event.code === 1011 || !event.wasClean;
+    }
+
+    private getRoomRejectionMessage(code: number): string | null {
+        if (code === ROOM_NOT_FOUND_CLOSE_CODE) {
+            return "Room not found. Check the room ID and try again.";
+        }
+        if (code === ROOM_FULL_CLOSE_CODE) {
+            return "This room is full. Ask the room creator for a new room ID.";
+        }
+        return null;
     }
 
     private reconnect(){

@@ -130,6 +130,11 @@ export class ConnectionManager extends EventTarget {
                 detail: (event as CustomEvent<unknown>).detail,
             }));
         });
+        this.webSocketService.addEventListener("room-rejected", (event) => {
+            this.dispatchEvent(new CustomEvent("room-rejected", {
+                detail: (event as CustomEvent<unknown>).detail,
+            }));
+        });
         this.webSocketService.addEventListener("error-in-data", () => {
             this.dispatchEvent(new CustomEvent("connection-error", {
                 detail: { reason: "Invalid signaling message received" },

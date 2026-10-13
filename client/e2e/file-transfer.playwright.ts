@@ -1,6 +1,17 @@
 import { readFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 
+test("returns to setup when joining a nonexistent room", async ({ page }) => {
+    const roomId = "00000000-0000-0000-0000-000000000000";
+    await page.goto("/");
+    await page.getByRole("textbox", { name: "Room ID" }).fill(roomId);
+    await page.getByRole("button", { name: "Join room" }).click();
+
+    await expect(page.locator("#app-error")).toHaveText("Room not found. Check the room ID and try again.");
+    await expect(page.locator("#setup-view")).toBeVisible();
+    await expect(page.getByRole("textbox", { name: "Room ID" })).toHaveValue(roomId);
+});
+
 test("creates a room, connects two peers, closes signaling, then transfers a file", async ({ browser }) => {
     const senderContext = await browser.newContext({ acceptDownloads: true });
     const receiverContext = await browser.newContext({ acceptDownloads: true });

@@ -187,6 +187,26 @@ describe("WebSocketService", () => {
         expect(newClient).not.toBe(initialClient);
         });
 
+    it("should report a rejected room without reconnecting", () => {
+      let rejectionDetail: { code: number; message: string } | null = null;
+      service.addEventListener("room-rejected", (event: Event) => {
+        rejectionDetail = (event as CustomEvent).detail;
+      });
+
+      mockServer.on("connection", (socket) => {
+        socket.close({ code: 4404, reason: "Room not found" });
+      });
+
+      vi.advanceTimersByTime(50);
+      vi.advanceTimersByTime(5000);
+
+      expect(rejectionDetail).toEqual({
+        code: 4404,
+        message: "Room not found. Check the room ID and try again.",
+      });
+      expect(mockServer.clients()).toHaveLength(0);
+    });
+
     it("should stop reconnecting and not retry when stop() is called explicitly", () => {
         // 1. Complete initial handshake
         vi.advanceTimersByTime(50);
