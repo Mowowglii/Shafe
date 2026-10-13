@@ -1,6 +1,7 @@
 import { ConnectionManager, type ConnectionRole } from "./connectionmanager.js";
 import type { FileTransferResponse } from "./types/filehandling.js";
 import type { ReceivedFile } from "./webrtc/filetransfer.manager.js";
+import "@fontsource-variable/inter";
 import "./style.css";
 
 type RoomResponse = { roomId: string; role: string };
@@ -421,6 +422,7 @@ function updateSendFileButton(): void {
 }
 
 function setStatus(message: string): void {
+    connectionStatus.textContent = message;
     const lastEntry = connectionJournalList.lastElementChild;
     if (lastEntry?.getAttribute("data-message") !== message) {
         const item = document.createElement("li");
@@ -438,7 +440,6 @@ function setStatus(message: string): void {
         }
         connectionJournalList.scrollTop = connectionJournalList.scrollHeight;
     }
-    connectionStatus.textContent = message;
 }
 
 function showError(error: unknown): void {

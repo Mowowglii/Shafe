@@ -24,6 +24,10 @@ test("creates a room, connects two peers, closes signaling, then transfers a fil
 
     try {
         await sender.goto("/");
+        await expect.poll(() => sender.evaluate(async () => {
+            await document.fonts.ready;
+            return document.fonts.check('16px "Inter Variable"');
+        })).toBe(true);
         await expect(sender.locator(".app-logo")).toBeVisible();
         await expect.poll(() => sender.locator(".app-logo").evaluate((image) => (image as HTMLImageElement).naturalWidth))
             .toBeGreaterThan(0);
@@ -40,6 +44,10 @@ test("creates a room, connects two peers, closes signaling, then transfers a fil
         expect(await sender.evaluate(() => navigator.clipboard.readText())).toBe(roomId);
 
         await receiver.goto("/");
+        await expect.poll(() => receiver.evaluate(async () => {
+            await document.fonts.ready;
+            return document.fonts.check('16px "Inter Variable"');
+        })).toBe(true);
         await receiver.getByRole("textbox", { name: "Room ID" }).fill(roomId!);
         await receiver.getByRole("button", { name: "Join room" }).click();
 

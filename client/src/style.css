@@ -1,7 +1,7 @@
 :root {
   color: #e8eee8;
   background: #18231f;
-  font: 16px/1.5 "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font: 16px/1.5 "Inter Variable", Inter, system-ui, sans-serif;
 }
 
 body {
@@ -90,12 +90,14 @@ section {
 }
 
 .connection-journal {
+  box-sizing: border-box;
   position: sticky;
   top: 1rem;
   display: grid;
   max-height: 36rem;
   min-width: 0;
-  grid-template-rows: auto auto minmax(0, 1fr);
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr);
   gap: 0.6rem;
   padding: 1rem;
   border: 1px solid #35483f;
@@ -176,6 +178,7 @@ section {
 
 .connection-journal-list {
   display: flex;
+  min-height: 0;
   flex-direction: column;
   gap: 0.5rem;
   overflow-y: auto;
