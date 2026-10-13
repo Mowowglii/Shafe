@@ -28,6 +28,7 @@ let connectionManager: ConnectionManager | null = null;
 let peerConnected = false;
 let dataChannelOpen = false;
 let activeTransferId: string | null = null;
+let activeTransferDirection: "send" | "receive" | null = null;
 const receivedObjectUrls: string[] = [];
 
 createRoomButton.addEventListener("click", () => {
@@ -51,6 +52,7 @@ sendFileButton.addEventListener("click", () => {
     try {
         const transferId = crypto.randomUUID();
         activeTransferId = transferId;
+        activeTransferDirection = "send";
         progressBar.hidden = false;
         transferComplete.hidden = true;
         transferCompleteLabel.textContent = "";
@@ -66,7 +68,7 @@ sendFileButton.addEventListener("click", () => {
 });
 
 cancelTransferButton.addEventListener("click", () => {
-    if (!connectionManager || !activeTransferId) {
+    if (!connectionManager || !activeTransferId || activeTransferDirection !== "send") {
         return;
     }
     cancelTransferButton.disabled = true;
@@ -124,6 +126,7 @@ async function startConnection(roomId: string, role: ConnectionRole): Promise<vo
     peerConnected = false;
     dataChannelOpen = false;
     activeTransferId = null;
+    activeTransferDirection = null;
     cancelTransferButton.hidden = true;
     cancelTransferButton.disabled = false;
     cancelTransferButton.textContent = "Cancel transfer";
@@ -197,12 +200,13 @@ async function startConnection(roomId: string, role: ConnectionRole): Promise<vo
     });
     connectionManager.addEventListener("file-receive-progress", (event) => {
         const detail = (event as CustomEvent<Extract<FileTransferResponse, { type: "file-receive-progress" }>>).detail;
-        activeTransferId = detail.transferId;
+        if (activeTransferDirection !== "send") {
+            activeTransferId = detail.transferId;
+            activeTransferDirection = "receive";
+            cancelTransferButton.hidden = true;
+        }
         progressBar.hidden = false;
         transferComplete.hidden = true;
-        cancelTransferButton.hidden = false;
-        cancelTransferButton.disabled = false;
-        cancelTransferButton.textContent = "Cancel transfer";
         progressBar.max = Math.max(detail.totalChunks, 1);
         progressBar.value = detail.receivedChunks;
         setStatus(`Receiving ${detail.fileName}…`);
@@ -213,6 +217,7 @@ async function startConnection(roomId: string, role: ConnectionRole): Promise<vo
             return;
         }
         activeTransferId = null;
+        activeTransferDirection = null;
         cancelTransferButton.hidden = true;
         cancelTransferButton.disabled = false;
         cancelTransferButton.textContent = "Cancel transfer";
@@ -226,6 +231,7 @@ async function startConnection(roomId: string, role: ConnectionRole): Promise<vo
     connectionManager.addEventListener("file-send-complete", (event) => {
         const detail = (event as CustomEvent<Extract<FileTransferResponse, { type: "file-send-complete" }>>).detail;
         activeTransferId = null;
+        activeTransferDirection = null;
         cancelTransferButton.hidden = true;
         progressBar.value = progressBar.max;
         progressBar.hidden = true;
@@ -238,6 +244,7 @@ async function startConnection(roomId: string, role: ConnectionRole): Promise<vo
         const file = (event as CustomEvent<ReceivedFile>).detail;
         if (activeTransferId === file.metadata.transferId) {
             activeTransferId = null;
+            activeTransferDirection = null;
             cancelTransferButton.hidden = true;
         }
         progressBar.hidden = true;
@@ -287,6 +294,7 @@ function returnToSetup(): void {
     transferComplete.hidden = true;
     transferCompleteLabel.textContent = "";
     activeTransferId = null;
+    activeTransferDirection = null;
     cancelTransferButton.hidden = true;
     cancelTransferButton.disabled = false;
     cancelTransferButton.textContent = "Cancel transfer";
