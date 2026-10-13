@@ -8,10 +8,14 @@ type RoomResponse = { roomId: string; role: string };
 
 const introReveal = document.getElementById("intro-reveal");
 const introExitDoor = introReveal?.querySelector(".intro-door--right");
-if (introReveal && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    introReveal.remove();
-} else if (introReveal && introExitDoor) {
-    introExitDoor.addEventListener("animationend", () => introReveal.remove(), { once: true });
+const finishIntro = (): void => {
+    introReveal?.remove();
+    document.body.classList.remove("intro-pending");
+};
+if (!introReveal || !introExitDoor || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    finishIntro();
+} else {
+    introExitDoor.addEventListener("animationend", finishIntro, { once: true });
 }
 
 const setupView = getElement<HTMLElement>("setup-view");

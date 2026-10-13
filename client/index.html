@@ -5,8 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#18231f" />
     <title>Shafe — Peer-to-peer file transfer</title>
+    <style>
+      body.intro-pending #app-shell {
+        visibility: hidden;
+      }
+    </style>
   </head>
-  <body>
+  <body class="intro-pending">
     <div id="intro-reveal" class="intro-reveal" aria-hidden="true" inert>
       <div class="intro-door intro-door--left">
         <span class="intro-door-handle"></span>

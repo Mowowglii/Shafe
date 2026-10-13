@@ -10,7 +10,9 @@ test("returns to setup when joining a nonexistent room", async ({ page }) => {
     await expect(introReveal.locator(".intro-door")).toHaveCount(2);
     await expect(introReveal.locator(".intro-door-handle")).toHaveCount(2);
     await expect(introReveal.locator(".intro-locker-badge .intro-logo")).toBeVisible();
+    await expect(page.locator("#app-shell")).toHaveCSS("visibility", "hidden");
     await expect(introReveal).toHaveCount(0, { timeout: 5_000 });
+    await expect(page.locator("#app-shell")).toHaveCSS("visibility", "visible");
     await page.getByRole("textbox", { name: "Room ID" }).fill(roomId);
     await page.getByRole("button", { name: "Join room" }).click();
 
