@@ -12,11 +12,15 @@ body {
 .app-shell {
   box-sizing: border-box;
   margin: 4rem auto;
+  transition: width 220ms ease;
+}
+
+.app-panel {
+  box-sizing: border-box;
   padding: 2rem;
   border: 1px solid #34445d;
   border-radius: 1rem;
   background: #182438;
-  transition: width 220ms ease;
 }
 
 .app-shell--setup {
@@ -27,13 +31,19 @@ body {
   width: min(100% - 2rem, 68rem);
 }
 
-header {
-  margin-bottom: 2rem;
+.app-header {
+  margin: 0 0 1rem;
+  padding: 0 0.4rem;
 }
 
 h1 {
   margin-bottom: 0;
   color: #84d6c2;
+}
+
+.app-header p {
+  margin: 0.2rem 0 0;
+  color: #b7c5d8;
 }
 
 section {
