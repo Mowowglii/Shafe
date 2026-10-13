@@ -31,7 +31,9 @@ describe("FileReconstructorEngine", () => {
   it("reconstructs and emits a file when chunks arrive out of order", () => {
     const engine = new FileReconstructorEngine(4);
     const received = vi.fn();
+    const progress = vi.fn();
     engine.addEventListener("file-reconstructed", received);
+    engine.addEventListener("file-receive-progress", progress);
     engine.addFileToMap(makeMetadata());
 
     engine.addChunkToFile(makeChunk(2, [9, 10]));
@@ -40,6 +42,10 @@ describe("FileReconstructorEngine", () => {
     engine.addChunkToFile(makeChunk(1, [5, 6, 7, 8]));
 
     expect(received).toHaveBeenCalledOnce();
+    expect(progress.mock.calls.map(([event]) => (event as CustomEvent).detail.receivedChunks))
+      .toEqual([1, 2, 3]);
+    expect(progress.mock.calls.map(([event]) => (event as CustomEvent).detail.metadata.totalChunk))
+      .toEqual([3, 3, 3]);
     expect((received.mock.calls[0]![0] as CustomEvent).detail).toEqual({
       metadata: makeMetadata(),
       data: new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).buffer,

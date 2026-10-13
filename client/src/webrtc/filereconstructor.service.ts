@@ -64,6 +64,12 @@ export class FileReconstructorEngine extends EventTarget {
 
         activeFile.buffer.set(chunk.payload, offset);
         activeFile.receivedChunks.add(chunk.metadata.chunkNumber);
+        this.dispatchEvent(new CustomEvent("file-receive-progress", {
+            detail: {
+                metadata: activeFile.metadata,
+                receivedChunks: activeFile.receivedChunks.size,
+            },
+        }));
         if (activeFile.receivedChunks.size === activeFile.metadata.totalChunk) {
             this.completeFile(activeFile);
         }

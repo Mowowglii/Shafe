@@ -38,7 +38,7 @@ joinRoomForm.addEventListener("submit", (event) => {
 });
 
 fileInput.addEventListener("change", () => {
-    sendFileButton.disabled = !connectionManager || !fileInput.files?.[0];
+    updateSendFileButton();
 });
 
 sendFileButton.addEventListener("click", () => {
@@ -125,8 +125,7 @@ async function startConnection(roomId: string, role: ConnectionRole): Promise<vo
         if (state === "connecting") {
             setStatus("Establishing peer-to-peer connection…");
         } else if (state === "disconnected" || state === "failed" || state === "closed") {
-            dataChannelOpen = false;
-            sendFileButton.disabled = true;
+            updateSendFileButton();
             const message = state === "disconnected"
                 ? "The peer connection was interrupted. It may recover automatically."
                 : `The peer connection ${state}.`;
@@ -134,17 +133,19 @@ async function startConnection(roomId: string, role: ConnectionRole): Promise<vo
             peerDisconnectNotice.textContent = `${message} Leave the room to return to the main screen.`;
             peerDisconnectNotice.hidden = false;
         } else if (peerConnected && dataChannelOpen) {
-            sendFileButton.disabled = !fileInput.files?.[0];
+            updateSendFileButton();
             setStatus("Peer-to-peer connection restored");
             peerDisconnectNotice.hidden = true;
+            clearError();
         }
     });
     connectionManager.addEventListener("data-channel-open", () => {
         dataChannelOpen = true;
         if (peerConnected) {
-            sendFileButton.disabled = !fileInput.files?.[0];
+            updateSendFileButton();
             setStatus("Peer-to-peer data channel ready");
             peerDisconnectNotice.hidden = true;
+            clearError();
         }
     });
     connectionManager.addEventListener("signaling-closed", () => {
@@ -152,7 +153,7 @@ async function startConnection(roomId: string, role: ConnectionRole): Promise<vo
     });
     connectionManager.addEventListener("data-channel-closed", () => {
         dataChannelOpen = false;
-        sendFileButton.disabled = true;
+        updateSendFileButton();
         setStatus("Peer-to-peer data channel closed");
         peerDisconnectNotice.textContent = "The peer closed the transfer connection. Leave the room to return to the main screen.";
         peerDisconnectNotice.hidden = false;
@@ -168,12 +169,20 @@ async function startConnection(roomId: string, role: ConnectionRole): Promise<vo
     connectionManager.addEventListener("file-transfer-error", (event) => {
         const detail = (event as CustomEvent<{ operation?: string; reason?: string }>).detail;
         showError(new Error([detail.operation, detail.reason].filter(Boolean).join(": ") || "File transfer failed"));
-        sendFileButton.disabled = !fileInput.files?.[0];
+        updateSendFileButton();
     });
     connectionManager.addEventListener("file-send-progress", (event) => {
         const detail = (event as CustomEvent<Extract<FileTransferResponse, { type: "file-send-progress" }>>).detail;
         progressBar.max = Math.max(detail.totalChunks, 1);
         progressBar.value = detail.sentChunks;
+    });
+    connectionManager.addEventListener("file-receive-progress", (event) => {
+        const detail = (event as CustomEvent<Extract<FileTransferResponse, { type: "file-receive-progress" }>>).detail;
+        progressBar.hidden = false;
+        transferComplete.hidden = true;
+        progressBar.max = Math.max(detail.totalChunks, 1);
+        progressBar.value = detail.receivedChunks;
+        setStatus(`Receiving ${detail.fileName}…`);
     });
     connectionManager.addEventListener("file-send-complete", (event) => {
         const detail = (event as CustomEvent<Extract<FileTransferResponse, { type: "file-send-complete" }>>).detail;
@@ -182,7 +191,7 @@ async function startConnection(roomId: string, role: ConnectionRole): Promise<vo
         transferComplete.hidden = false;
         transferCompleteLabel.textContent = `Transfer complete: ${detail.fileName}`;
         setStatus(`File transfer completed: ${detail.fileName}`);
-        sendFileButton.disabled = !fileInput.files?.[0];
+        updateSendFileButton();
     });
     connectionManager.addEventListener("file-received", (event) => {
         progressBar.hidden = true;
@@ -276,6 +285,13 @@ function formatBytes(bytes: number): string {
 function setSetupBusy(busy: boolean): void {
     createRoomButton.disabled = busy;
     getElement<HTMLButtonElement>("join-room-btn").disabled = busy;
+}
+
+function updateSendFileButton(): void {
+    sendFileButton.disabled = !connectionManager
+        || !peerConnected
+        || !dataChannelOpen
+        || !fileInput.files?.[0];
 }
 
 function setStatus(message: string): void {

@@ -87,6 +87,7 @@ export class ConnectionManager extends EventTarget {
             "file-received",
             "file-send-complete",
             "file-send-progress",
+            "file-receive-progress",
             "file-transfer-error",
             "data-channel-error",
         ]) {

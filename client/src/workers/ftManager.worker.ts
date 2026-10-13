@@ -28,6 +28,20 @@ reconstructor.addEventListener("file-reconstructed", (event) => {
     }, [detail.data]);
 });
 
+reconstructor.addEventListener("file-receive-progress", (event) => {
+    const detail = (event as CustomEvent<{
+        metadata: FileMetadata;
+        receivedChunks: number;
+    }>).detail;
+    workerScope.postMessage({
+        type: "file-receive-progress",
+        fileName: detail.metadata.fileName,
+        transferId: detail.metadata.transferId,
+        receivedChunks: detail.receivedChunks,
+        totalChunks: detail.metadata.totalChunk,
+    });
+});
+
 for (const eventName of ["file-metadata-corrupted", "chunk-filename-corrupted", "chunk-payload-corrupted"]) {
     reconstructor.addEventListener(eventName, () => {
         reportError("receive", new Error(`Received invalid file transfer data (${eventName})`));

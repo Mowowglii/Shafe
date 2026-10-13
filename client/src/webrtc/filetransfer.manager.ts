@@ -75,6 +75,9 @@ export class FileTransferManager extends EventTarget {
             case "file-send-progress":
                 this.dispatchEvent(new CustomEvent("file-send-progress", { detail: response }));
                 break;
+            case "file-receive-progress":
+                this.dispatchEvent(new CustomEvent("file-receive-progress", { detail: response }));
+                break;
             case "file-received": {
                 const receivedFile: ReceivedFile = {
                     metadata: response.metadata,

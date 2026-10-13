@@ -25,14 +25,27 @@ test("creates a room, connects two peers, closes signaling, then transfers a fil
         await receiver.getByRole("textbox", { name: "Room ID" }).fill(roomId!);
         await receiver.getByRole("button", { name: "Join room" }).click();
 
-        const readyStatus = "Peer-to-peer connection ready; signaling disconnected";
-        await expect(sender.locator("#connection-status")).toHaveText(readyStatus, { timeout: 60_000 });
-        await expect(receiver.locator("#connection-status")).toHaveText(readyStatus, { timeout: 60_000 });
-
         await sender.locator("#file-input").setInputFiles({
             name: fileName,
             mimeType: "text/plain",
             buffer: Buffer.from(fileContents),
+        });
+        await expect(sender.getByRole("button", { name: "Send file" })).toBeDisabled();
+
+        const readyStatus = "Peer-to-peer connection ready; signaling disconnected";
+        await expect(sender.locator("#connection-status")).toHaveText(readyStatus, { timeout: 60_000 });
+        await expect(receiver.locator("#connection-status")).toHaveText(readyStatus, { timeout: 60_000 });
+        await expect(sender.getByRole("button", { name: "Send file" })).toBeEnabled();
+        await expect(sender.locator("#app-error")).toBeHidden();
+
+        await receiver.locator("#connection-status").evaluate((element) => {
+            const status = element as HTMLElement;
+            const receivedStatuses: string[] = [];
+            const observer = new MutationObserver(() => {
+                receivedStatuses.push(status.textContent ?? "");
+                status.dataset.progressLog = JSON.stringify(receivedStatuses);
+            });
+            observer.observe(status, { childList: true, characterData: true, subtree: true });
         });
         await sender.getByRole("button", { name: "Send file" }).click();
         await expect(sender.locator("#progress-bar")).toBeHidden({ timeout: 30_000 });
@@ -47,6 +60,11 @@ test("creates a room, connects two peers, closes signaling, then transfers a fil
         await expect(receiver.locator("#progress-bar")).toBeHidden();
         await expect(receiver.locator("#transfer-complete")).toBeVisible();
         await expect(receiver.locator("#transfer-complete-label")).toContainText(`Received: ${fileName}`);
+        const receivedStatuses = JSON.parse(
+            (await receiver.locator("#connection-status").getAttribute("data-progress-log")) ?? "[]",
+        ) as string[];
+        expect(receivedStatuses.some((status) => status.startsWith(`Receiving ${fileName}…`))).toBe(true);
+        expect(receivedStatuses.some((status) => /\d+ of \d+ chunks/.test(status))).toBe(false);
         await expect(receiver.locator("#received-files")).toHaveCount(0);
         const downloadPromise = receiver.waitForEvent("download");
         await receivedFileLink.click();
