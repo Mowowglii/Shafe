@@ -13,6 +13,7 @@ test("creates a room, connects two peers, closes signaling, then transfers a fil
 
     try {
         await sender.goto("/");
+        const setupShellWidth = await sender.locator("#app-shell").evaluate((shell) => shell.getBoundingClientRect().width);
         await sender.getByRole("button", { name: "Create a room" }).click();
         const roomIdElement = sender.locator("#current-room-id");
         await expect(roomIdElement).not.toBeEmpty({ timeout: 10_000 });
@@ -47,6 +48,8 @@ test("creates a room, connects two peers, closes signaling, then transfers a fil
         const readyStatus = "Peer-to-peer connection ready; signaling disconnected";
         await expect(sender.locator("#connection-status")).toHaveText(readyStatus, { timeout: 60_000 });
         await expect(receiver.locator("#connection-status")).toHaveText(readyStatus, { timeout: 60_000 });
+        await expect.poll(() => sender.locator("#app-shell").evaluate((shell) => shell.getBoundingClientRect().width))
+            .toBeGreaterThan(setupShellWidth);
         await expect(sender.getByRole("button", { name: "Send file" })).toBeEnabled();
         await expect(sender.locator("#connection-journal-title")).toBeVisible();
         const journalToggle = sender.getByRole("button", { name: "Hide connection events" });
@@ -150,6 +153,8 @@ test("creates a room, connects two peers, closes signaling, then transfers a fil
 
         await receiver.getByRole("button", { name: "Leave room" }).click();
         await expect(receiver.getByRole("button", { name: "Create a room" })).toBeVisible();
+        await expect.poll(() => receiver.locator("#app-shell").evaluate((shell) => shell.getBoundingClientRect().width))
+            .toBe(setupShellWidth);
         await expect(sender.locator("#peer-disconnect-notice")).toContainText(/peer|connection/i, { timeout: 30_000 });
         await expect(sender.getByRole("button", { name: "Send file" })).toBeDisabled();
     } finally {

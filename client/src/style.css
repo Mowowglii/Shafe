@@ -9,14 +9,22 @@ body {
   min-width: 320px;
 }
 
-main {
+.app-shell {
   box-sizing: border-box;
-  width: min(100% - 2rem, 68rem);
   margin: 4rem auto;
   padding: 2rem;
   border: 1px solid #34445d;
   border-radius: 1rem;
   background: #182438;
+  transition: width 220ms ease;
+}
+
+.app-shell--setup {
+  width: min(100% - 2rem, 42rem);
+}
+
+.app-shell--transfer {
+  width: min(100% - 2rem, 68rem);
 }
 
 header {
@@ -31,10 +39,6 @@ h1 {
 section {
   display: grid;
   gap: 0.8rem;
-}
-
-#setup-view {
-  max-width: 42rem;
 }
 
 .transfer-layout {

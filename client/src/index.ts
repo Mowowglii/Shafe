@@ -7,6 +7,7 @@ type RoomResponse = { roomId: string; role: string };
 
 const setupView = getElement<HTMLElement>("setup-view");
 const transferView = getElement<HTMLElement>("transfer-view");
+const appShell = getElement<HTMLElement>("app-shell");
 const createRoomButton = getElement<HTMLButtonElement>("create-room-btn");
 const copyRoomIdButton = getElement<HTMLButtonElement>("copy-room-id-btn");
 const copyRoomIdStatus = getElement<HTMLElement>("copy-room-id-status");
@@ -141,6 +142,7 @@ async function startConnection(roomId: string, role: ConnectionRole): Promise<vo
     peerDisconnectNotice.textContent = "";
     setupView.hidden = true;
     transferView.hidden = false;
+    appShell.className = "app-shell--transfer";
     setStatus("Connecting to the signaling server…");
 
     connectionManager.addEventListener("signaling-open", () => {
@@ -365,6 +367,7 @@ function returnToSetup(): void {
     setStatus("Disconnected");
     transferView.hidden = true;
     setupView.hidden = false;
+    appShell.className = "app-shell--setup";
     setSetupBusy(false);
 }
 
