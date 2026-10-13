@@ -33,20 +33,11 @@
         <p id="copy-room-id-status" role="status" aria-live="polite"></p>
         <p id="connection-status" role="status" aria-live="polite">Connecting…</p>
         <p id="peer-disconnect-notice" role="alert" hidden></p>
-        <label for="file-input">Choose a file</label>
-        <input id="file-input" type="file" />
+        <label for="file-input">Choose one or more files</label>
+        <input id="file-input" type="file" multiple />
         <button id="send-file-btn" type="button" disabled>Send file</button>
-        <button id="cancel-transfer-btn" type="button" hidden>Cancel transfer</button>
         <button id="leave-room-btn" type="button">Leave room</button>
-        <div class="transfer-progress">
-          <progress id="progress-bar" value="0" max="100" aria-label="File transfer progress"></progress>
-          <span id="transfer-complete" class="transfer-complete" role="status" aria-label="Transfer complete" hidden>
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="m5 12 4 4L19 6" />
-            </svg>
-            <span id="transfer-complete-label"></span>
-          </span>
-        </div>
+        <ul id="transfer-list" class="transfer-list" aria-label="File transfers"></ul>
       </section>
 
       <p id="app-error" role="alert" hidden></p>

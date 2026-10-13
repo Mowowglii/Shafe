@@ -68,10 +68,29 @@ button:disabled {
   opacity: 0.55;
 }
 
-.transfer-progress {
-  display: flex;
-  min-height: 1.25rem;
-  align-items: center;
+.transfer-list {
+  display: grid;
+  gap: 0.8rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.transfer-item {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.9rem;
+  border: 1px solid #34445d;
+  border-radius: 0.7rem;
+  background: #101827;
+}
+
+.transfer-file-name {
+  overflow-wrap: anywhere;
+}
+
+.transfer-status {
+  color: #b7c5d8;
 }
 
 progress {
@@ -127,20 +146,20 @@ progress::-moz-progress-bar {
   stroke-width: 2.5;
 }
 
-#transfer-complete-label {
+.transfer-complete-label {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-#transfer-complete-label a {
+.transfer-complete-label a {
   color: inherit;
   font: inherit;
   text-decoration: none;
 }
 
-#transfer-complete-label a:hover,
-#transfer-complete-label a:focus-visible {
+.transfer-complete-label a:hover,
+.transfer-complete-label a:focus-visible {
   text-decoration: underline;
   text-underline-offset: 0.2em;
 }

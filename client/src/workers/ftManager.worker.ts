@@ -12,14 +12,14 @@ const workerScope = globalThis as unknown as WorkerScope;
 const chunker = new FileChunkingEngine();
 const reconstructor = new FileReconstructorEngine();
 let nextPacketId = 0;
-let sendInProgress = false;
-let activeSend: { transferId: string; fileName: string; controller: AbortController } | null = null;
 let receiveQueue = Promise.resolve();
 const cancelledTransfers = new Set<string>();
 const pendingAcknowledgements = new Map<number, {
+    transferId: string;
     resolve: () => void;
     reject: (error: Error) => void;
 }>();
+const activeSends = new Map<string, AbortController>();
 
 reconstructor.addEventListener("file-reconstructed", (event) => {
     const detail = (event as CustomEvent<{ metadata: FileMetadata; data: ArrayBuffer }>).detail;
@@ -79,21 +79,20 @@ workerScope.addEventListener("message", ({ data }) => {
 });
 
 async function sendFile(file: File, transferId: string): Promise<void> {
-    if (sendInProgress) {
-        reportError("send", new Error("A file transfer is already in progress"));
+    if (activeSends.has(transferId)) {
+        reportError("send", new Error(`Transfer ID ${transferId} is already active`));
         return;
     }
 
-    sendInProgress = true;
     const controller = new AbortController();
-    activeSend = { transferId, fileName: file.name, controller };
+    activeSends.set(transferId, controller);
     let sentChunks = 0;
     try {
         const metadata = await chunker.chunkFile(
             file,
             transferId,
             async (chunk) => {
-                await sendPacket(encodeFileChunk(chunk));
+                await sendPacket(transferId, encodeFileChunk(chunk));
                 sentChunks += 1;
                 workerScope.postMessage({
                     type: "file-send-progress",
@@ -103,7 +102,7 @@ async function sendFile(file: File, transferId: string): Promise<void> {
                     totalChunks: Math.ceil(file.size / DEFAULT_FILE_CHUNK_SIZE),
                 });
             },
-            async (fileMetadata) => sendPacket(encodeFileMetadata(fileMetadata)),
+            async (fileMetadata) => sendPacket(transferId, encodeFileMetadata(fileMetadata)),
             controller.signal,
         );
         workerScope.postMessage({
@@ -122,46 +121,36 @@ async function sendFile(file: File, transferId: string): Promise<void> {
             reportError("send", error);
         }
     } finally {
-        if (activeSend?.transferId === transferId) {
-            activeSend = null;
-        }
-        sendInProgress = false;
+        activeSends.delete(transferId);
     }
 }
 
 function abortOutgoingTransfer(transferId: string): void {
-    if (activeSend?.transferId !== transferId) {
+    const controller = activeSends.get(transferId);
+    if (!controller) {
         return;
     }
-    activeSend.controller.abort();
+    controller.abort();
     for (const [packetId, acknowledgement] of pendingAcknowledgements) {
-        acknowledgement.reject(new DOMException("File transfer was cancelled", "AbortError"));
-        pendingAcknowledgements.delete(packetId);
+        if (acknowledgement.transferId === transferId) {
+            acknowledgement.reject(new DOMException("File transfer was cancelled", "AbortError"));
+            pendingAcknowledgements.delete(packetId);
+        }
     }
 }
 
 function cancelOutgoingTransfer(transferId: string): void {
-    if (activeSend?.transferId === transferId) {
-        abortOutgoingTransfer(transferId);
-        workerScope.postMessage({ type: "send-cancel-notification", transferId });
+    if (!activeSends.has(transferId)) {
         return;
     }
-    const metadata = reconstructor.cancelTransfer(transferId);
-    if (metadata) {
-        cancelledTransfers.add(transferId);
-        workerScope.postMessage({
-            type: "file-transfer-cancelled",
-            fileName: metadata.fileName,
-            transferId,
-        });
-        workerScope.postMessage({ type: "send-cancel-notification", transferId });
-    }
+    abortOutgoingTransfer(transferId);
+    workerScope.postMessage({ type: "send-cancel-notification", transferId });
 }
 
-async function sendPacket(data: string | ArrayBuffer): Promise<void> {
+async function sendPacket(transferId: string, data: string | ArrayBuffer): Promise<void> {
     const packetId = ++nextPacketId;
     const acknowledgement = new Promise<void>((resolve, reject) => {
-        pendingAcknowledgements.set(packetId, { resolve, reject });
+        pendingAcknowledgements.set(packetId, { transferId, resolve, reject });
     });
 
     if (typeof data === "string") {
@@ -176,10 +165,6 @@ async function receiveData(data: string | ArrayBuffer): Promise<void> {
     if (typeof data === "string") {
         const cancelledTransferId = decodeTransferCancellation(data);
         if (cancelledTransferId) {
-            if (activeSend?.transferId === cancelledTransferId) {
-                abortOutgoingTransfer(cancelledTransferId);
-                return;
-            }
             const metadata = reconstructor.cancelTransfer(cancelledTransferId);
             if (metadata) {
                 cancelledTransfers.add(cancelledTransferId);

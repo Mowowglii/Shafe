@@ -25,11 +25,24 @@ test("creates a room, connects two peers, closes signaling, then transfers a fil
         await receiver.getByRole("textbox", { name: "Room ID" }).fill(roomId!);
         await receiver.getByRole("button", { name: "Join room" }).click();
 
-        await sender.locator("#file-input").setInputFiles({
+        await sender.locator("#file-input").setInputFiles([{
             name: fileName,
             mimeType: "text/plain",
             buffer: Buffer.from(fileContents),
-        });
+        }, {
+            name: "second-sender-file.txt",
+            mimeType: "text/plain",
+            buffer: Buffer.from("Second file sent by sender."),
+        }]);
+        await receiver.locator("#file-input").setInputFiles([{
+            name: "receiver-file.txt",
+            mimeType: "text/plain",
+            buffer: Buffer.from("File sent by receiver."),
+        }, {
+            name: "second-receiver-file.txt",
+            mimeType: "text/plain",
+            buffer: Buffer.from("Second file sent by receiver."),
+        }]);
         await expect(sender.getByRole("button", { name: "Send file" })).toBeDisabled();
 
         const readyStatus = "Peer-to-peer connection ready; signaling disconnected";
@@ -59,33 +72,39 @@ test("creates a room, connects two peers, closes signaling, then transfers a fil
         await sender.getByRole("button", { name: "Cancel transfer" }).click();
         await expect(sender.locator("#connection-status")).toHaveText(`Transfer cancelled: ${cancelFileName}`, { timeout: 30_000 });
         await expect(receiver.locator("#connection-status")).toHaveText(`Transfer cancelled: ${cancelFileName}`, { timeout: 30_000 });
-        await expect(sender.getByRole("button", { name: "Cancel transfer" })).toBeHidden();
-        await expect(receiver.getByRole("button", { name: "Cancel transfer" })).toBeHidden();
+        await expect(sender.locator(`[data-transfer-id][data-direction="send"]`)).toHaveCount(1);
+        await expect(receiver.locator(`[data-transfer-id][data-direction="receive"]`)).toHaveCount(1);
 
-        await sender.locator("#file-input").setInputFiles({
+        await sender.locator("#file-input").setInputFiles([{
             name: fileName,
             mimeType: "text/plain",
             buffer: Buffer.from(fileContents),
-        });
+        }, {
+            name: "second-sender-file.txt",
+            mimeType: "text/plain",
+            buffer: Buffer.from("Second file sent by sender."),
+        }]);
         await sender.getByRole("button", { name: "Send file" }).click();
-        await expect(sender.locator("#progress-bar")).toBeHidden({ timeout: 30_000 });
-        await expect(sender.locator("#transfer-complete")).toBeVisible();
-        await expect(sender.locator("#transfer-complete-label")).toHaveText(`Transfer complete: ${fileName}`);
-        await expect(sender.locator("#connection-status")).toHaveText(`File transfer completed: ${fileName}`);
+        await receiver.getByRole("button", { name: "Send file" }).click();
+        const senderRows = sender.locator(`[data-direction="send"]`);
+        const receiverRows = receiver.locator(`[data-direction="receive"]`);
+        await expect(senderRows).toHaveCount(3);
+        await expect(receiverRows).toHaveCount(3);
+        await expect(senderRows.filter({ hasText: fileName }).locator(".transfer-complete")).toBeVisible({ timeout: 30_000 });
+        await expect(senderRows.filter({ hasText: "second-sender-file.txt" }).locator(".transfer-complete")).toBeVisible({ timeout: 30_000 });
+        await expect(receiver.locator(`[data-direction="send"]`)).toHaveCount(2);
+        await expect(sender.locator(`[data-direction="receive"]`)).toHaveCount(2);
 
-        const receivedFileLink = receiver.locator("#transfer-complete-label").getByRole("link", {
+        const receivedFileLink = receiverRows.filter({ hasText: fileName }).locator(".transfer-complete-label").getByRole("link", {
             name: fileName,
         });
         await expect(receivedFileLink).toBeVisible({ timeout: 30_000 });
-        await expect(receiver.locator("#progress-bar")).toBeHidden();
-        await expect(receiver.locator("#transfer-complete")).toBeVisible();
-        await expect(receiver.locator("#transfer-complete-label")).toContainText(`Received: ${fileName}`);
+        await expect(receiverRows.filter({ hasText: fileName }).locator(".transfer-complete")).toBeVisible();
         const receivedStatuses = JSON.parse(
             (await receiver.locator("#connection-status").getAttribute("data-progress-log")) ?? "[]",
         ) as string[];
         expect(receivedStatuses.some((status) => status.startsWith(`Receiving ${fileName}…`))).toBe(true);
         expect(receivedStatuses.some((status) => /\d+ of \d+ chunks/.test(status))).toBe(false);
-        await expect(receiver.locator("#received-files")).toHaveCount(0);
         const downloadPromise = receiver.waitForEvent("download");
         await receivedFileLink.click();
         const download = await downloadPromise;
@@ -93,6 +112,18 @@ test("creates a room, connects two peers, closes signaling, then transfers a fil
         expect(download.suggestedFilename()).toBe(fileName);
         expect(downloadedPath).not.toBeNull();
         expect(await readFile(downloadedPath!, "utf8")).toBe(fileContents);
+        const senderReceivedRow = sender.locator(`[data-direction="receive"]`).filter({
+            has: sender.getByText("receiver-file.txt", { exact: true }),
+        });
+        const senderReceivedLink = senderReceivedRow.locator(".transfer-complete-label a");
+        await expect(senderReceivedLink).toBeVisible();
+        const senderDownloadPromise = sender.waitForEvent("download");
+        await senderReceivedLink.click();
+        const senderDownload = await senderDownloadPromise;
+        const senderDownloadedPath = await senderDownload.path();
+        expect(senderDownload.suggestedFilename()).toBe("receiver-file.txt");
+        expect(senderDownloadedPath).not.toBeNull();
+        expect(await readFile(senderDownloadedPath!, "utf8")).toBe("File sent by receiver.");
 
         await receiver.getByRole("button", { name: "Leave room" }).click();
         await expect(receiver.getByRole("button", { name: "Create a room" })).toBeVisible();
