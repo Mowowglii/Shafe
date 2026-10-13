@@ -419,7 +419,9 @@ function setStatus(message: string): void {
         const time = document.createElement("time");
         time.dateTime = timestamp.toISOString();
         time.textContent = timestamp.toLocaleTimeString();
-        item.append(time, document.createTextNode(message));
+        const entryMessage = document.createElement("span");
+        entryMessage.textContent = message;
+        item.append(time, entryMessage);
         connectionJournalList.append(item);
         if (connectionJournalList.childElementCount > 100) {
             connectionJournalList.firstElementChild?.remove();

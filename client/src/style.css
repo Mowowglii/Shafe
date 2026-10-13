@@ -150,7 +150,9 @@ section {
   scrollbar-color: #53647c transparent;
   scrollbar-width: thin;
   margin: 0;
-  padding: 0 0.25rem 0 1.5rem;
+  padding: 0 0.25rem 0 0;
+  counter-reset: journal-entry;
+  list-style: none;
   color: #b7c5d8;
 }
 
@@ -175,14 +177,31 @@ section {
 }
 
 .connection-journal-list li {
-  padding-left: 0.2rem;
+  display: grid;
+  grid-template-columns: 1.5rem minmax(0, 1fr);
+  column-gap: 0.5rem;
   overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.connection-journal-list li::before {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  counter-increment: journal-entry;
+  content: counter(journal-entry);
+  color: #8292a8;
+  text-align: right;
 }
 
 .connection-journal-list time {
+  grid-column: 2;
   display: block;
   color: #8292a8;
   font-size: 0.78rem;
+}
+
+.connection-journal-list li span {
+  grid-column: 2;
 }
 
 form {
