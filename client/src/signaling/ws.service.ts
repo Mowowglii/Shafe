@@ -3,6 +3,7 @@ import { parseInto } from "../utils/parseHelper.js";
 
 const ROOM_NOT_FOUND_CLOSE_CODE = 4404;
 const ROOM_FULL_CLOSE_CODE = 4409;
+const ROOM_EXPIRED_REASON = "Room expired due to inactivity";
 
 export class WebSocketService extends EventTarget{
     private ws : WebSocket | null = null;
@@ -73,6 +74,12 @@ export class WebSocketService extends EventTarget{
             if (this.reconnectResetTimer !== null) {
                 clearTimeout(this.reconnectResetTimer);
                 this.reconnectResetTimer = null;
+            }
+            if (event.reason === ROOM_EXPIRED_REASON) {
+                this.isClosedByUser = true;
+                this.dispatchEvent(new CustomEvent("room-expired", {
+                    detail: { code: event.code, reason: event.reason },
+                }));
             }
             const rejectionMessage = this.getRoomRejectionMessage(event.code);
             if (rejectionMessage) {

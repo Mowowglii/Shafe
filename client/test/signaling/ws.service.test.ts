@@ -207,6 +207,24 @@ describe("WebSocketService", () => {
       expect(mockServer.clients()).toHaveLength(0);
     });
 
+    it("should report an expired room and not reconnect", () => {
+      let expiredDetail: { code: number; reason: string } | null = null;
+      service.addEventListener("room-expired", (event: Event) => {
+        expiredDetail = (event as CustomEvent).detail;
+      });
+
+      vi.advanceTimersByTime(50);
+      const client = mockServer.clients()[0];
+      client.close({ code: 1000, reason: "Room expired due to inactivity", wasClean: true });
+      vi.advanceTimersByTime(5000);
+
+      expect(expiredDetail).toEqual({
+        code: 1000,
+        reason: "Room expired due to inactivity",
+      });
+      expect(mockServer.clients()).toHaveLength(0);
+    });
+
     it("should stop reconnecting and not retry when stop() is called explicitly", () => {
         // 1. Complete initial handshake
         vi.advanceTimersByTime(50);

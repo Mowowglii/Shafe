@@ -207,6 +207,10 @@ async function startConnection(roomId: string, role: ConnectionRole): Promise<vo
         const seconds = (event as CustomEvent<{ secondsRemaining: number }>).detail.secondsRemaining;
         setStatus(`Signaling room expires in ${seconds} seconds`);
     });
+    connectionManager.addEventListener("room-expired", () => {
+        returnToSetup();
+        showError(new Error("This room expired due to inactivity. You have been returned to the main menu."));
+    });
     connectionManager.addEventListener("room-rejected", (event) => {
         const detail = (event as CustomEvent<{ message: string }>).detail;
         const attemptedRoomId = currentRoomId.textContent?.trim() ?? "";
