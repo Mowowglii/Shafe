@@ -1,6 +1,6 @@
 :root {
-  color: #e5edf8;
-  background: #101827;
+  color: #173d33;
+  background: #e7e9e1;
   font: 16px/1.5 system-ui, sans-serif;
 }
 
@@ -18,9 +18,10 @@ body {
 .app-panel {
   box-sizing: border-box;
   padding: 2rem;
-  border: 1px solid #34445d;
+  border: 1px solid #c5d4ca;
   border-radius: 1rem;
-  background: #182438;
+  background: #f5f5ee;
+  box-shadow: 0 16px 40px rgb(23 61 51 / 9%);
 }
 
 .app-shell--setup {
@@ -32,18 +33,33 @@ body {
 }
 
 .app-header {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
   margin: 0 0 1rem;
   padding: 0 0.4rem;
 }
 
+.app-logo {
+  box-sizing: border-box;
+  width: 4.25rem;
+  height: 4.25rem;
+  flex: 0 0 auto;
+  border: 2px solid #16815f;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center;
+  box-shadow: 0 3px 10px rgb(23 61 51 / 14%);
+}
+
 h1 {
   margin-bottom: 0;
-  color: #84d6c2;
+  color: #087b58;
 }
 
 .app-header p {
   margin: 0.2rem 0 0;
-  color: #b7c5d8;
+  color: #587269;
 }
 
 section {
@@ -81,9 +97,9 @@ section {
   grid-template-rows: auto auto minmax(0, 1fr);
   gap: 0.6rem;
   padding: 1rem;
-  border: 1px solid #34445d;
+  border: 1px solid #c5d4ca;
   border-radius: 0.8rem;
-  background: #101827;
+  background: #eef1e9;
 }
 
 .connection-journal-header {
@@ -95,7 +111,7 @@ section {
 
 .connection-journal h3 {
   margin: 0;
-  color: #84d6c2;
+  color: #087b58;
 }
 
 .journal-toggle {
@@ -105,23 +121,23 @@ section {
   flex: 0 0 auto;
   place-items: center;
   padding: 0.35rem;
-  border: 1px solid #40546c;
+  border: 1px solid #b9cbbf;
   border-radius: 50%;
-  color: #b7c5d8;
-  background: linear-gradient(145deg, #1b2a40, #101827);
-  box-shadow: 0 2px 8px rgb(0 0 0 / 22%);
+  color: #245b47;
+  background: linear-gradient(145deg, #fffef8, #e3e9df);
+  box-shadow: 0 2px 8px rgb(23 61 51 / 14%);
   transition: border-color 160ms ease, color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
 }
 
 .journal-toggle:hover {
   transform: translateY(-1px);
-  border-color: #84d6c2;
-  color: #84d6c2;
-  box-shadow: 0 4px 12px rgb(0 0 0 / 30%);
+  border-color: #16815f;
+  color: #087b58;
+  box-shadow: 0 4px 12px rgb(23 61 51 / 20%);
 }
 
 .journal-toggle:focus-visible {
-  outline: 2px solid #84d6c2;
+  outline: 2px solid #16815f;
   outline-offset: 3px;
 }
 
@@ -150,9 +166,9 @@ section {
 #connection-status {
   margin: 0;
   padding: 0.65rem 0.75rem;
-  border-left: 3px solid #38bdf8;
+  border-left: 3px solid #c58e3c;
   border-radius: 0.3rem;
-  background: #182438;
+  background: #e6ece3;
   overflow-wrap: anywhere;
 }
 
@@ -161,12 +177,12 @@ section {
   flex-direction: column;
   gap: 0.5rem;
   overflow-y: auto;
-  scrollbar-color: #53647c transparent;
+  scrollbar-color: #9bb6a5 transparent;
   scrollbar-width: thin;
   margin: 0;
   padding: 0 0.25rem 0 0;
   list-style: none;
-  color: #b7c5d8;
+  color: #315c4c;
 }
 
 .connection-journal-list::-webkit-scrollbar {
@@ -180,12 +196,12 @@ section {
 .connection-journal-list::-webkit-scrollbar-thumb {
   border: 1px solid transparent;
   border-radius: 999px;
-  background: #53647c;
+  background: #9bb6a5;
   background-clip: padding-box;
 }
 
 .connection-journal-list::-webkit-scrollbar-thumb:hover {
-  background: #84d6c2;
+  background: #16815f;
   background-clip: padding-box;
 }
 
@@ -199,7 +215,7 @@ section {
 
 .connection-journal-list time {
   display: block;
-  color: #8292a8;
+  color: #71877a;
   font-size: 0.78rem;
 }
 
@@ -215,20 +231,20 @@ button {
   box-sizing: border-box;
   min-height: 2.7rem;
   padding: 0.55rem 0.8rem;
-  border: 1px solid #53647c;
+  border: 1px solid #aabeb0;
   border-radius: 0.45rem;
   font: inherit;
 }
 
 input {
-  color: #e5edf8;
-  background: #101827;
+  color: #173d33;
+  background: #fffef8;
 }
 
 button {
-  color: #101827;
-  border-color: #84d6c2;
-  background: #84d6c2;
+  color: #fffef8;
+  border-color: #087b58;
+  background: #087b58;
   cursor: pointer;
   font-weight: 650;
 }
@@ -252,9 +268,9 @@ button:disabled {
   grid-template-columns: minmax(0, 1fr);
   gap: 0.55rem;
   padding: 0.9rem;
-  border: 1px solid #34445d;
+  border: 1px solid #c5d4ca;
   border-radius: 0.7rem;
-  background: #101827;
+  background: #eef1e9;
 }
 
 .transfer-file-name {
@@ -265,7 +281,7 @@ button:disabled {
 
 .transfer-status {
   min-width: 0;
-  color: #b7c5d8;
+  color: #587269;
   overflow-wrap: anywhere;
   word-break: break-word;
 }
@@ -275,25 +291,25 @@ progress {
   height: 0.9rem;
   overflow: hidden;
   appearance: none;
-  border: 1px solid #40546c;
+  border: 1px solid #b9cbbf;
   border-radius: 999px;
-  background: #0c1421;
+  background: #dce5dc;
 }
 
 progress::-webkit-progress-bar {
   border-radius: 999px;
-  background: #0c1421;
+  background: #dce5dc;
 }
 
 progress::-webkit-progress-value {
   border-radius: 999px;
-  background: linear-gradient(90deg, #2dd4bf, #38bdf8);
+  background: linear-gradient(90deg, #16815f, #45bfa2, #c58e3c);
   transition: width 180ms ease;
 }
 
 progress::-moz-progress-bar {
   border-radius: 999px;
-  background: linear-gradient(90deg, #2dd4bf, #38bdf8);
+  background: linear-gradient(90deg, #16815f, #45bfa2, #c58e3c);
   transition: width 180ms ease;
 }
 
@@ -303,7 +319,7 @@ progress::-moz-progress-bar {
   max-width: 100%;
   align-items: center;
   gap: 0.65rem;
-  color: #6ee7b7;
+  color: #087b58;
   font-weight: 650;
 }
 
@@ -314,9 +330,9 @@ progress::-moz-progress-bar {
   flex: 0 0 auto;
   padding: 0.3rem;
   border-radius: 50%;
-  background: #34d399;
-  box-shadow: 0 0 0 3px rgb(52 211 153 / 18%);
-  color: #06251e;
+  background: #51c19c;
+  box-shadow: 0 0 0 3px rgb(22 129 95 / 18%);
+  color: #103e30;
   fill: none;
   stroke: currentColor;
   stroke-linecap: round;
@@ -359,7 +375,7 @@ code {
 }
 
 [role="alert"] {
-  color: #ff9b9b;
+  color: #a54138;
 }
 
 @media (max-width: 760px) {
@@ -374,8 +390,8 @@ code {
 }
 
 #leave-room-btn {
-  color: #e5edf8;
-  border-color: #53647c;
+  color: #315c4c;
+  border-color: #aabeb0;
   background: transparent;
 }
 
