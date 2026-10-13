@@ -101,7 +101,10 @@ sendFileButton.addEventListener("click", () => {
     updateSendFileButton();
 });
 
-leaveRoomButton.addEventListener("click", returnToSetup);
+leaveRoomButton.addEventListener("click", () => {
+    connectionManager?.leaveRoom();
+    returnToSetup();
+});
 
 copyRoomIdButton.addEventListener("click", () => {
     void copyRoomId();
@@ -148,6 +151,7 @@ async function startConnection(roomId: string, role: ConnectionRole): Promise<vo
     connectionManager = new ConnectionManager(roomId, role, {
         iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
     });
+    let awaitingPeerAfterPromotion = false;
     peerConnected = false;
     dataChannelOpen = false;
     clearTransferRows();
@@ -166,6 +170,12 @@ async function startConnection(roomId: string, role: ConnectionRole): Promise<vo
     });
     connectionManager.addEventListener("connection-state", (event) => {
         const state = (event as CustomEvent<RTCPeerConnectionState>).detail;
+        if (awaitingPeerAfterPromotion && state !== "connecting" && state !== "connected") {
+            return;
+        }
+        if (state === "connecting" || state === "connected") {
+            awaitingPeerAfterPromotion = false;
+        }
         peerConnected = state === "connected";
         if (state === "connecting") {
             setStatus("Establishing peer-to-peer connection…");
@@ -185,6 +195,7 @@ async function startConnection(roomId: string, role: ConnectionRole): Promise<vo
         }
     });
     connectionManager.addEventListener("data-channel-open", () => {
+        awaitingPeerAfterPromotion = false;
         dataChannelOpen = true;
         if (peerConnected) {
             updateSendFileButton();
@@ -193,10 +204,17 @@ async function startConnection(roomId: string, role: ConnectionRole): Promise<vo
             clearError();
         }
     });
-    connectionManager.addEventListener("signaling-closed", () => {
-        setStatus("Peer-to-peer connection ready; signaling disconnected");
+    connectionManager.addEventListener("role-promoted", () => {
+        awaitingPeerAfterPromotion = true;
+        const message = "The other user left. You can wait for someone else to join.";
+        setStatus(message);
+        peerDisconnectNotice.textContent = message;
+        peerDisconnectNotice.hidden = false;
     });
     connectionManager.addEventListener("data-channel-closed", () => {
+        if (awaitingPeerAfterPromotion) {
+            return;
+        }
         dataChannelOpen = false;
         updateSendFileButton();
         setStatus("Peer-to-peer data channel closed");

@@ -84,6 +84,10 @@ public class RoomManagerService {
                 expireRoom(roomId, room);
                 return JoinResult.ROOM_NOT_FOUND;
             }
+            if (room.isClosed()) {
+                activeRooms.remove(roomId, room);
+                return JoinResult.ROOM_NOT_FOUND;
+            }
             return JoinResult.ROOM_FULL;
         }
     }
@@ -91,14 +95,19 @@ public class RoomManagerService {
     public void leaveRoom(String roomId, WebSocketSession session) {
         Room room = activeRooms.get(roomId);
         if (room != null) {
-            boolean removed = room.deleteSession(session);
-            if (removed) {
+            Room.LeaveResult departure = room.removeSession(session);
+            if (departure.removed()) {
                 log.info("Session {} left room {}", sessionId(session), roomId);
+                if (departure.empty()) {
+                    if (activeRooms.remove(roomId, room)) {
+                        log.info("Deleted empty room {} after its last session left", roomId);
+                    }
+                } else if (departure.activeSessions().size() == 1) {
+                    promoteRemainingSession(roomId, departure.activeSessions().getFirst());
+                }
             } else {
                 log.debug("Session {} was not active in room {}", sessionId(session), roomId);
             }
-            
-            // Retain empty rooms until their inactivity TTL expires, allowing the warning window.
         } else {
             log.debug("Cannot leave missing room {} (session {})", roomId, sessionId(session));
         }
@@ -172,6 +181,20 @@ public class RoomManagerService {
             } catch (IOException e) {
                 log.warn("Failed to send expiration warning for room {} to session {}", roomId, sessionId(session), e);
             }
+        }
+    }
+
+    private void promoteRemainingSession(String roomId, WebSocketSession session) {
+        try {
+            if (session.isOpen()) {
+                session.sendMessage(new SigMessage("peer-left", "initiator").toTextMessage());
+                log.info("Promoted remaining session {} in room {} to initiator",
+                        sessionId(session), roomId);
+            }
+        } catch (IOException e) {
+            log.warn("Failed to promote remaining session {} in room {}",
+                    sessionId(session), roomId, e);
+            leaveRoom(roomId, session);
         }
     }
 

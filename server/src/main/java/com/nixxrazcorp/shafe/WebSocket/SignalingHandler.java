@@ -20,6 +20,8 @@ public class SignalingHandler extends TextWebSocketHandler{
     private static final Logger log = LoggerFactory.getLogger(SignalingHandler.class);
     private static final CloseStatus ROOM_NOT_FOUND = new CloseStatus(4404, "Room not found");
     private static final CloseStatus ROOM_FULL = new CloseStatus(4409, "Room is full");
+    private static final String ROOM_PRESENCE_MESSAGE = "room-presence";
+    private static final String ROOM_LEAVE_MESSAGE = "room-leave";
 
     private final RoomManagerService roomManagerService;
 
@@ -64,6 +66,19 @@ public class SignalingHandler extends TextWebSocketHandler{
     protected void handleTextMessage(WebSocketSession session, TextMessage message){
         String roomId = recoverRoomId(session);
         if (roomId != null && roomManagerService.recordSignalingActivity(roomId, session)){
+            if (ROOM_PRESENCE_MESSAGE.equals(message.getPayload())) {
+                return;
+            }
+            if (ROOM_LEAVE_MESSAGE.equals(message.getPayload())) {
+                roomManagerService.leaveRoom(roomId, session);
+                try {
+                    session.close();
+                } catch (IOException e) {
+                    log.warn("Failed to close departing WebSocket session {} from room {}",
+                            session.getId(), roomId, e);
+                }
+                return;
+            }
             List<WebSocketSession> listOfSessions = roomManagerService.getOtherActiveSessions(roomId, session);
             log.debug("Forwarding signaling message from session {} to {} peer(s) in room {}; payload length={}",
                     session.getId(), listOfSessions.size(), roomId, message.getPayloadLength());

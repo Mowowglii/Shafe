@@ -10,14 +10,16 @@ export class ConnectionManager extends EventTarget {
     private readonly fileTransferManager: FileTransferManager;
     private readonly webSocketService: WebSocketService;
     private signalingQueue: Promise<void> = Promise.resolve();
+    private role: ConnectionRole;
     private offerStarted = false;
+    private waitingForReplacementPeer = false;
     private peerConnected = false;
     private dataChannelOpen = false;
-    private signalingClosed = false;
     private isClosed = false;
 
     constructor(roomId: string, role: ConnectionRole, rtcConfiguration: RTCConfiguration = {}) {
         super();
+        this.role = role;
         this.peerManager = new PeerManagerService(rtcConfiguration);
         this.fileTransferManager = new FileTransferManager();
         this.bindPeerManager();
@@ -27,7 +29,7 @@ export class ConnectionManager extends EventTarget {
         signalingUrl.protocol = signalingUrl.protocol === "https:" ? "wss:" : "ws:";
         signalingUrl.searchParams.set("roomId", roomId);
         this.webSocketService = new WebSocketService(signalingUrl.toString());
-        this.bindWebSocketService(role);
+        this.bindWebSocketService();
     }
 
     sendFile(file: File, transferId: string): void {
@@ -48,6 +50,11 @@ export class ConnectionManager extends EventTarget {
         this.peerManager.close();
     }
 
+    leaveRoom(): void {
+        this.webSocketService.leaveRoom();
+        this.close();
+    }
+
     private bindPeerManager(): void {
         this.peerManager.addEventListener("signal-generated", (event) => {
             this.webSocketService.sendSignal((event as CustomEvent<SignalingMessage>).detail);
@@ -62,7 +69,6 @@ export class ConnectionManager extends EventTarget {
             const state = (event as CustomEvent<RTCPeerConnectionState>).detail;
             this.peerConnected = state === "connected";
             this.dispatchEvent(new CustomEvent("connection-state", { detail: state }));
-            this.closeSignalingWhenReady();
         });
         for (const eventName of [
             "dc-not-created",
@@ -81,7 +87,6 @@ export class ConnectionManager extends EventTarget {
         this.fileTransferManager.addEventListener("data-channel-open", () => {
             this.dataChannelOpen = true;
             this.dispatchEvent(new CustomEvent("data-channel-open"));
-            this.closeSignalingWhenReady();
         });
         this.fileTransferManager.addEventListener("data-channel-closed", () => {
             this.dataChannelOpen = false;
@@ -103,22 +108,30 @@ export class ConnectionManager extends EventTarget {
         }
     }
 
-    private bindWebSocketService(role: ConnectionRole): void {
+    private bindWebSocketService(): void {
         this.webSocketService.addEventListener("ws-opened", () => {
             this.dispatchEvent(new CustomEvent("signaling-open"));
             this.webSocketService.sendSignal({
                 type: "peer-ready",
-                payload: role,
+                payload: this.role,
             });
         });
         this.webSocketService.addEventListener("signal-received", (event) => {
             const message = (event as CustomEvent<SignalingMessage>).detail;
             if (message.type === "peer-ready") {
-                if (role === "initiator" && message.payload === "recipient") {
+                if (this.role === "initiator" && message.payload === "recipient") {
+                    if (this.waitingForReplacementPeer) {
+                        this.peerManager.restart();
+                        this.waitingForReplacementPeer = false;
+                    }
                     this.startOffer();
-                } else if (role === "recipient" && message.payload === "initiator") {
-                    this.webSocketService.sendSignal({ type: "peer-ready", payload: role });
+                } else if (this.role === "recipient" && message.payload === "initiator") {
+                    this.webSocketService.sendSignal({ type: "peer-ready", payload: this.role });
                 }
+                return;
+            }
+            if (message.type === "peer-left") {
+                this.promoteToInitiator();
                 return;
             }
             this.signalingQueue = this.signalingQueue
@@ -162,12 +175,16 @@ export class ConnectionManager extends EventTarget {
         });
     }
 
-    private closeSignalingWhenReady(): void {
-        if (this.peerConnected && this.dataChannelOpen && !this.signalingClosed) {
-            this.signalingClosed = true;
-            this.webSocketService.stop();
-            this.dispatchEvent(new CustomEvent("signaling-closed"));
+    private promoteToInitiator(): void {
+        if (this.isClosed) {
+            return;
         }
+        this.role = "initiator";
+        this.offerStarted = false;
+        this.waitingForReplacementPeer = true;
+        this.peerConnected = false;
+        this.dataChannelOpen = false;
+        this.dispatchEvent(new CustomEvent("role-promoted", { detail: this.role }));
     }
 
     private reportError(operation: string, error: unknown): void {

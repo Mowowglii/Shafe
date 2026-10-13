@@ -135,6 +135,43 @@ describe("WebSocketService", () => {
       expect(warningDetail).toEqual({ secondsRemaining: 60 });
     });
 
+    it("should send room presence messages while connected and stop them on close", async () => {
+      const receivedMessages: string[] = [];
+      mockServer.on("connection", (socket) => {
+        socket.on("message", (data) => receivedMessages.push(data as string));
+      });
+      const openedPromise = new Promise<void>((resolve) => {
+        service.addEventListener("ws-opened", () => resolve(), { once: true });
+      });
+
+      vi.advanceTimersByTime(50);
+      await openedPromise;
+      vi.advanceTimersByTime(30_000);
+
+      expect(receivedMessages).toEqual(["room-presence"]);
+
+      service.stop();
+      vi.advanceTimersByTime(60_000);
+      expect(receivedMessages).toEqual(["room-presence"]);
+    });
+
+    it("should notify the server when explicitly leaving a room", async () => {
+      const receivedMessages: string[] = [];
+      mockServer.on("connection", (socket) => {
+        socket.on("message", (data) => receivedMessages.push(data as string));
+      });
+      const openedPromise = new Promise<void>((resolve) => {
+        service.addEventListener("ws-opened", () => resolve(), { once: true });
+      });
+
+      vi.advanceTimersByTime(50);
+      await openedPromise;
+      service.leaveRoom();
+      vi.advanceTimersByTime(10);
+
+      expect(receivedMessages).toEqual(["room-leave"]);
+    });
+
     it("should dispatch error-in-data when server sends unparseable or error payload", async () => {
       let errorDispatched = false;
 

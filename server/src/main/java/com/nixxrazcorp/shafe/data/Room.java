@@ -18,6 +18,7 @@ public final class Room{
     private Instant lastSignalingAt;
     private boolean expirationWarningSent;
     private boolean expired;
+    private boolean closed;
     private ArrayList<FTSession> sessionList = new ArrayList<FTSession>();
     private boolean isFull = false;
     private int capacity;    
@@ -68,7 +69,10 @@ public final class Room{
     public boolean recordSignalingActivity(WebSocketSession ws, Instant activityTime, Duration ttl){
         lock.writeLock().lock();
         try {
-            if (this.expired || Duration.between(this.lastSignalingAt, activityTime).compareTo(ttl) >= 0){
+            if (this.expired || this.closed) {
+                return false;
+            }
+            if (Duration.between(this.lastSignalingAt, activityTime).compareTo(ttl) >= 0){
                 this.expired = true;
                 return false;
             }
@@ -156,7 +160,11 @@ public final class Room{
     public boolean addSession(WebSocketSession ws, Instant now, Duration ttl){
         lock.writeLock().lock();
         try {
-            if (this.expired || Duration.between(this.lastSignalingAt, now).compareTo(ttl) >= 0){
+            if (this.expired || this.closed) {
+                log.debug("Rejected session {} because room is closed", sessionId(ws));
+                return false;
+            }
+            if (Duration.between(this.lastSignalingAt, now).compareTo(ttl) >= 0){
                 this.expired = true;
                 log.debug("Rejected session {} because room has expired", sessionId(ws));
                 return false;
@@ -205,11 +213,15 @@ public final class Room{
     }
 
     public boolean deleteSession(WebSocketSession ws){
+        return removeSession(ws).removed();
+    }
+
+    public LeaveResult removeSession(WebSocketSession ws){
         lock.writeLock().lock();
         try{
             if (ws == null){
                 log.warn("Cannot remove a null WebSocket session");
-                return false;
+                return new LeaveResult(false, false, List.of());
             }
 
             FTSession sessionToDelete = this.findSessionByWs(ws);
@@ -220,16 +232,40 @@ public final class Room{
                 this.activeCounter -= 1;
                 this.sleepingCounter += 1;
                 this.updateState();
+                if (this.activeCounter == 0) {
+                    this.closed = true;
+                }
                 log.debug("Marked session {} inactive; active={}, sleeping={}",
                         sessionId(ws), activeCounter, sleepingCounter);
-                return true;
+                return new LeaveResult(true, this.closed, this.getActiveSessionsLocked());
             }
             log.debug("Session {} was not found or was already inactive", sessionId(ws));
-            return false;
+            return new LeaveResult(false, false, this.getActiveSessionsLocked());
         } finally {
             lock.writeLock().unlock();
         }
     }
+
+    public boolean isClosed(){
+        lock.readLock().lock();
+        try {
+            return this.closed;
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    private List<WebSocketSession> getActiveSessionsLocked(){
+        List<WebSocketSession> activeSessions = new ArrayList<>();
+        for (FTSession session : this.sessionList){
+            if (session.isActive() && session.getWsSession() != null){
+                activeSessions.add(session.getWsSession());
+            }
+        }
+        return activeSessions;
+    }
+
+    public record LeaveResult(boolean removed, boolean empty, List<WebSocketSession> activeSessions) {}
 
     private void updateState(){
         this.isAsleep = this.activeCounter == 0;

@@ -33,7 +33,8 @@ test("returns to setup when joining a nonexistent room", async ({ page }) => {
     await expect(page.getByRole("textbox", { name: "Room ID" })).toHaveValue(roomId);
 });
 
-test("creates a room, connects two peers, closes signaling, then transfers a file", async ({ browser }) => {
+test("creates a room, connects peers, promotes the survivor, and reconnects a new peer", async ({ browser }) => {
+    test.setTimeout(120_000);
     const senderContext = await browser.newContext({ acceptDownloads: true });
     const receiverContext = await browser.newContext({ acceptDownloads: true });
     await senderContext.grantPermissions(["clipboard-read", "clipboard-write"]);
@@ -41,7 +42,7 @@ test("creates a room, connects two peers, closes signaling, then transfers a fil
     const receiver = await receiverContext.newPage();
     const fileName = "shafe-integration.txt";
     const longFileName = `${"very-long-file-name-".repeat(8)}.txt`;
-    const fileContents = "P2P file transfer survives signaling shutdown.";
+    const fileContents = "P2P file transfer works while signaling remains active.";
 
     try {
         await sender.goto("/");
@@ -90,7 +91,7 @@ test("creates a room, connects two peers, closes signaling, then transfers a fil
             mimeType: "text/plain",
             buffer: Buffer.from("Second file sent by receiver."),
         }]);
-        const readyStatus = "Peer-to-peer connection ready; signaling disconnected";
+        const readyStatus = "Peer-to-peer data channel ready";
         await expect(sender.locator("#connection-status")).toHaveText(readyStatus, { timeout: 60_000 });
         await expect(receiver.locator("#connection-status")).toHaveText(readyStatus, { timeout: 60_000 });
         await expect.poll(() => sender.locator("#app-shell").evaluate((shell) => shell.getBoundingClientRect().width))
@@ -200,8 +201,25 @@ test("creates a room, connects two peers, closes signaling, then transfers a fil
         await expect(receiver.getByRole("button", { name: "Create a room" })).toBeVisible();
         await expect.poll(() => receiver.locator("#app-shell").evaluate((shell) => shell.getBoundingClientRect().width))
             .toBe(setupShellWidth);
-        await expect(sender.locator("#peer-disconnect-notice")).toContainText(/peer|connection/i, { timeout: 30_000 });
+        const promotionMessage = "The other user left. You can wait for someone else to join.";
+        await expect(sender.locator("#peer-disconnect-notice")).toHaveText(promotionMessage, { timeout: 30_000 });
         await expect(sender.getByRole("button", { name: "Send file" })).toBeDisabled();
+        await sender.waitForTimeout(1_000);
+        await expect(sender.locator("#peer-disconnect-notice")).toHaveText(promotionMessage);
+
+        await receiver.getByRole("textbox", { name: "Room ID" }).fill(roomId!);
+        await receiver.getByRole("button", { name: "Join room" }).click();
+        await expect(sender.locator("#connection-status")).toHaveText(readyStatus, { timeout: 60_000 });
+        await expect(receiver.locator("#connection-status")).toHaveText(readyStatus, { timeout: 60_000 });
+        await receiver.locator("#file-input").setInputFiles({
+            name: "reconnected-peer.txt",
+            mimeType: "text/plain",
+            buffer: Buffer.from("The promoted peer accepted a new connection."),
+        });
+        await receiver.getByRole("button", { name: "Send file" }).click();
+        await expect(sender.locator(`[data-direction="receive"]`).filter({
+            has: sender.getByText("reconnected-peer.txt", { exact: true }),
+        }).locator(".transfer-complete")).toBeVisible({ timeout: 30_000 });
     } finally {
         await senderContext.close();
         await receiverContext.close();

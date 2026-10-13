@@ -4,12 +4,16 @@ import { parseInto } from "../utils/parseHelper.js";
 const ROOM_NOT_FOUND_CLOSE_CODE = 4404;
 const ROOM_FULL_CLOSE_CODE = 4409;
 const ROOM_EXPIRED_REASON = "Room expired due to inactivity";
+const ROOM_PRESENCE_INTERVAL_MS = 30_000;
+const ROOM_PRESENCE_MESSAGE = "room-presence";
+const ROOM_LEAVE_MESSAGE = "room-leave";
 
 export class WebSocketService extends EventTarget{
     private ws : WebSocket | null = null;
     private pendingMessage : SignalingMessage[] = [];
     private reconnectTimer : number | null = null;
     private reconnectResetTimer : number | null = null;
+    private presenceTimer : number | null = null;
     private reconnectAttempt : number = 0;
     private readonly maxReconnectAttempts : number = 5;
     private readonly reconnectDelayMs : number = 1000;
@@ -55,6 +59,12 @@ export class WebSocketService extends EventTarget{
         this.ws.onopen = (event) => {
             // Update the reconnecting flag
             this.isReconnecting = false;
+            this.clearPresenceTimer();
+            this.presenceTimer = globalThis.setInterval(() => {
+                if (this.ws?.readyState === WebSocket.OPEN) {
+                    this.ws.send(ROOM_PRESENCE_MESSAGE);
+                }
+            }, ROOM_PRESENCE_INTERVAL_MS);
             
             // reset reconnect attempt only if connection is considered as stable
             if (this.reconnectAttempt > 0) {
@@ -71,6 +81,7 @@ export class WebSocketService extends EventTarget{
 
         // CLOSE
         this.ws.onclose = (event) => {
+            this.clearPresenceTimer();
             if (this.reconnectResetTimer !== null) {
                 clearTimeout(this.reconnectResetTimer);
                 this.reconnectResetTimer = null;
@@ -131,6 +142,12 @@ export class WebSocketService extends EventTarget{
             // Notify on message sent
             this.dispatchEvent(new CustomEvent("msg-sent", { detail: msg }));
             return;
+        }
+    }
+
+    leaveRoom(): void {
+        if (this.ws?.readyState === WebSocket.OPEN) {
+            this.ws.send(ROOM_LEAVE_MESSAGE);
         }
     }
 
@@ -203,6 +220,7 @@ export class WebSocketService extends EventTarget{
     }
 
     stop(){
+        this.clearPresenceTimer();
         // Clear timeout
         if (this.reconnectTimer !== null) {
             clearTimeout(this.reconnectTimer);
@@ -219,6 +237,13 @@ export class WebSocketService extends EventTarget{
         this.isClosedByUser = true;
         // Close Web Socket
         this.ws?.close();
+    }
+
+    private clearPresenceTimer(): void {
+        if (this.presenceTimer !== null) {
+            globalThis.clearInterval(this.presenceTimer);
+            this.presenceTimer = null;
+        }
     }
 
     restart(url? : string) {
