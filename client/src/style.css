@@ -1,6 +1,6 @@
 :root {
-  color: #173d33;
-  background: #e7e9e1;
+  color: #e8eee8;
+  background: #18231f;
   font: 16px/1.5 system-ui, sans-serif;
 }
 
@@ -18,10 +18,10 @@ body {
 .app-panel {
   box-sizing: border-box;
   padding: 2rem;
-  border: 1px solid #c5d4ca;
+  border: 1px solid #35483f;
   border-radius: 1rem;
-  background: #f5f5ee;
-  box-shadow: 0 16px 40px rgb(23 61 51 / 9%);
+  background: #22312b;
+  box-shadow: 0 16px 40px rgb(0 0 0 / 20%);
 }
 
 .app-shell--setup {
@@ -42,24 +42,25 @@ body {
 
 .app-logo {
   box-sizing: border-box;
-  width: 4.25rem;
-  height: 4.25rem;
+  width: 5.25rem;
+  height: 5.25rem;
   flex: 0 0 auto;
-  border: 2px solid #16815f;
+  border: 2px solid #527d66;
   border-radius: 50%;
   object-fit: cover;
   object-position: center;
-  box-shadow: 0 3px 10px rgb(23 61 51 / 14%);
+  background: #31463a;
+  box-shadow: 0 3px 10px rgb(0 0 0 / 24%);
 }
 
 h1 {
   margin-bottom: 0;
-  color: #087b58;
+  color: #64c89d;
 }
 
 .app-header p {
   margin: 0.2rem 0 0;
-  color: #587269;
+  color: #afc1b5;
 }
 
 section {
@@ -97,9 +98,9 @@ section {
   grid-template-rows: auto auto minmax(0, 1fr);
   gap: 0.6rem;
   padding: 1rem;
-  border: 1px solid #c5d4ca;
+  border: 1px solid #35483f;
   border-radius: 0.8rem;
-  background: #eef1e9;
+  background: #1d2a24;
 }
 
 .connection-journal-header {
@@ -111,7 +112,7 @@ section {
 
 .connection-journal h3 {
   margin: 0;
-  color: #087b58;
+  color: #64c89d;
 }
 
 .journal-toggle {
@@ -121,23 +122,23 @@ section {
   flex: 0 0 auto;
   place-items: center;
   padding: 0.35rem;
-  border: 1px solid #b9cbbf;
+  border: 1px solid #465b50;
   border-radius: 50%;
-  color: #245b47;
-  background: linear-gradient(145deg, #fffef8, #e3e9df);
-  box-shadow: 0 2px 8px rgb(23 61 51 / 14%);
+  color: #d6e6da;
+  background: linear-gradient(145deg, #30433a, #22312b);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 24%);
   transition: border-color 160ms ease, color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
 }
 
 .journal-toggle:hover {
   transform: translateY(-1px);
-  border-color: #16815f;
-  color: #087b58;
-  box-shadow: 0 4px 12px rgb(23 61 51 / 20%);
+  border-color: #64c89d;
+  color: #78d7af;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 32%);
 }
 
 .journal-toggle:focus-visible {
-  outline: 2px solid #16815f;
+  outline: 2px solid #64c89d;
   outline-offset: 3px;
 }
 
@@ -166,9 +167,10 @@ section {
 #connection-status {
   margin: 0;
   padding: 0.65rem 0.75rem;
-  border-left: 3px solid #c58e3c;
+  border-left: 3px solid #d2a45b;
   border-radius: 0.3rem;
-  background: #e6ece3;
+  background: #2b3a32;
+  color: #e8eee8;
   overflow-wrap: anywhere;
 }
 
@@ -177,12 +179,12 @@ section {
   flex-direction: column;
   gap: 0.5rem;
   overflow-y: auto;
-  scrollbar-color: #9bb6a5 transparent;
+  scrollbar-color: #647d6f transparent;
   scrollbar-width: thin;
   margin: 0;
   padding: 0 0.25rem 0 0;
   list-style: none;
-  color: #315c4c;
+  color: #c3d2c8;
 }
 
 .connection-journal-list::-webkit-scrollbar {
@@ -196,12 +198,12 @@ section {
 .connection-journal-list::-webkit-scrollbar-thumb {
   border: 1px solid transparent;
   border-radius: 999px;
-  background: #9bb6a5;
+  background: #647d6f;
   background-clip: padding-box;
 }
 
 .connection-journal-list::-webkit-scrollbar-thumb:hover {
-  background: #16815f;
+  background: #64c89d;
   background-clip: padding-box;
 }
 
@@ -215,7 +217,7 @@ section {
 
 .connection-journal-list time {
   display: block;
-  color: #71877a;
+  color: #91a99a;
   font-size: 0.78rem;
 }
 
@@ -231,20 +233,20 @@ button {
   box-sizing: border-box;
   min-height: 2.7rem;
   padding: 0.55rem 0.8rem;
-  border: 1px solid #aabeb0;
+  border: 1px solid #53685d;
   border-radius: 0.45rem;
   font: inherit;
 }
 
 input {
-  color: #173d33;
-  background: #fffef8;
+  color: #e8eee8;
+  background: #2b3a32;
 }
 
 button {
-  color: #fffef8;
-  border-color: #087b58;
-  background: #087b58;
+  color: #f3f7f2;
+  border-color: #147a56;
+  background: #147a56;
   cursor: pointer;
   font-weight: 650;
 }
@@ -268,9 +270,9 @@ button:disabled {
   grid-template-columns: minmax(0, 1fr);
   gap: 0.55rem;
   padding: 0.9rem;
-  border: 1px solid #c5d4ca;
+  border: 1px solid #35483f;
   border-radius: 0.7rem;
-  background: #eef1e9;
+  background: #2b3a32;
 }
 
 .transfer-file-name {
@@ -281,7 +283,7 @@ button:disabled {
 
 .transfer-status {
   min-width: 0;
-  color: #587269;
+  color: #afc1b5;
   overflow-wrap: anywhere;
   word-break: break-word;
 }
@@ -291,25 +293,25 @@ progress {
   height: 0.9rem;
   overflow: hidden;
   appearance: none;
-  border: 1px solid #b9cbbf;
+  border: 1px solid #53685d;
   border-radius: 999px;
-  background: #dce5dc;
+  background: #19241f;
 }
 
 progress::-webkit-progress-bar {
   border-radius: 999px;
-  background: #dce5dc;
+  background: #19241f;
 }
 
 progress::-webkit-progress-value {
   border-radius: 999px;
-  background: linear-gradient(90deg, #16815f, #45bfa2, #c58e3c);
+  background: linear-gradient(90deg, #20845f, #55c69d, #d2a45b);
   transition: width 180ms ease;
 }
 
 progress::-moz-progress-bar {
   border-radius: 999px;
-  background: linear-gradient(90deg, #16815f, #45bfa2, #c58e3c);
+  background: linear-gradient(90deg, #20845f, #55c69d, #d2a45b);
   transition: width 180ms ease;
 }
 
@@ -319,7 +321,7 @@ progress::-moz-progress-bar {
   max-width: 100%;
   align-items: center;
   gap: 0.65rem;
-  color: #087b58;
+  color: #75d2a8;
   font-weight: 650;
 }
 
@@ -330,9 +332,9 @@ progress::-moz-progress-bar {
   flex: 0 0 auto;
   padding: 0.3rem;
   border-radius: 50%;
-  background: #51c19c;
-  box-shadow: 0 0 0 3px rgb(22 129 95 / 18%);
-  color: #103e30;
+  background: #55c69d;
+  box-shadow: 0 0 0 3px rgb(85 198 157 / 20%);
+  color: #173a2d;
   fill: none;
   stroke: currentColor;
   stroke-linecap: round;
@@ -375,7 +377,7 @@ code {
 }
 
 [role="alert"] {
-  color: #a54138;
+  color: #f0a092;
 }
 
 @media (max-width: 760px) {
@@ -390,8 +392,8 @@ code {
 }
 
 #leave-room-btn {
-  color: #315c4c;
-  border-color: #aabeb0;
+  color: #c3d2c8;
+  border-color: #53685d;
   background: transparent;
 }
 
