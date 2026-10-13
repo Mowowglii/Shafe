@@ -7,11 +7,11 @@ import "./style.css";
 type RoomResponse = { roomId: string; role: string };
 
 const introReveal = document.getElementById("intro-reveal");
-const introExitPanel = introReveal?.querySelector(".intro-panel--right");
+const introExitDoor = introReveal?.querySelector(".intro-door--right");
 if (introReveal && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     introReveal.remove();
-} else if (introReveal && introExitPanel) {
-    introExitPanel.addEventListener("animationend", () => introReveal.remove(), { once: true });
+} else if (introReveal && introExitDoor) {
+    introExitDoor.addEventListener("animationend", () => introReveal.remove(), { once: true });
 }
 
 const setupView = getElement<HTMLElement>("setup-view");

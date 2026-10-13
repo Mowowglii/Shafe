@@ -17,37 +17,81 @@ body {
   background: #18231f;
 }
 
-.intro-panel {
+.intro-door {
   position: absolute;
   inset-block: 0;
   width: 50%;
-  background: #18231f;
-  animation-duration: 820ms;
-  animation-delay: 420ms;
+  background: linear-gradient(135deg, #24352d, #1b2923 70%);
+  animation-duration: 900ms;
+  animation-delay: 700ms;
   animation-fill-mode: forwards;
   animation-timing-function: cubic-bezier(0.76, 0, 0.24, 1);
 }
 
-.intro-panel--left {
+.intro-door::before {
+  position: absolute;
+  inset: 1rem;
+  border: 1px solid rgb(116 151 128 / 16%);
+  border-radius: 0.7rem;
+  content: "";
+  pointer-events: none;
+}
+
+.intro-door--left {
   left: 0;
   animation-name: intro-open-left;
+  border-right: 2px solid #415a4a;
+  box-shadow: inset -12px 0 20px -20px #0d1712;
 }
 
-.intro-panel--right {
+.intro-door--right {
   right: 0;
   animation-name: intro-open-right;
+  border-left: 2px solid #15211b;
+  box-shadow: inset 12px 0 20px -20px #0d1712;
 }
 
-.intro-logo {
+.intro-door-handle {
+  position: absolute;
+  top: 50%;
+  width: 0.45rem;
+  height: 4.5rem;
+  border: 1px solid #597260;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #405b49, #77917b, #405b49);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 35%);
+  transform: translateY(-50%);
+}
+
+.intro-door--left .intro-door-handle {
+  right: 1.5rem;
+}
+
+.intro-door--right .intro-door-handle {
+  left: 1.5rem;
+}
+
+.intro-locker-badge {
   position: absolute;
   z-index: 1;
   top: 50%;
   left: 50%;
-  width: clamp(6rem, 16vw, 9rem);
-  height: clamp(6rem, 16vw, 9rem);
-  object-fit: contain;
+  display: grid;
+  width: clamp(9rem, 25vw, 13rem);
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px solid #597260;
+  border-radius: 1.25rem;
+  background: linear-gradient(145deg, #2c4035, #1d2b24);
+  box-shadow: 0 12px 36px rgb(0 0 0 / 38%), inset 0 0 0 0.4rem rgb(116 151 128 / 7%);
   transform: translate(-50%, -50%);
-  animation: intro-logo-fade 380ms ease-in 300ms forwards;
+  animation: intro-badge-fade 260ms ease-in 700ms forwards;
+}
+
+.intro-logo {
+  width: 72%;
+  height: 72%;
+  object-fit: contain;
 }
 
 @keyframes intro-open-left {
@@ -62,10 +106,10 @@ body {
   }
 }
 
-@keyframes intro-logo-fade {
+@keyframes intro-badge-fade {
   to {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.92);
+    transform: translate(-50%, -50%) scale(0.9);
   }
 }
 
