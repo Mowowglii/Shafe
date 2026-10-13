@@ -93,6 +93,9 @@ test("creates a room, connects two peers, closes signaling, then transfers a fil
         await expect(senderRows.filter({ hasText: "second-sender-file.txt" }).locator(".transfer-complete")).toBeVisible({ timeout: 30_000 });
         await expect(receiver.locator(`[data-direction="send"]`)).toHaveCount(2);
         await expect(sender.locator(`[data-direction="receive"]`)).toHaveCount(2);
+        await expect.poll(() => receiver.locator("#connection-journal-list").evaluate((list) => {
+            return list.scrollTop + list.clientHeight >= list.scrollHeight - 1;
+        })).toBe(true);
 
         const receivedFileLink = receiverRows.filter({ hasText: fileName }).locator(".transfer-complete-label").getByRole("link", {
             name: fileName,

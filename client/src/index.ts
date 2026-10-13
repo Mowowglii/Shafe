@@ -411,6 +411,7 @@ function setStatus(message: string): void {
         if (connectionJournalList.childElementCount > 100) {
             connectionJournalList.firstElementChild?.remove();
         }
+        connectionJournalList.scrollTop = connectionJournalList.scrollHeight;
     }
     connectionStatus.textContent = message;
 }

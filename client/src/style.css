@@ -83,9 +83,31 @@ section {
   flex-direction: column;
   gap: 0.5rem;
   overflow-y: auto;
+  scrollbar-color: #53647c transparent;
+  scrollbar-width: thin;
   margin: 0;
   padding: 0 0.25rem 0 1.5rem;
   color: #b7c5d8;
+}
+
+.connection-journal-list::-webkit-scrollbar {
+  width: 0.4rem;
+}
+
+.connection-journal-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.connection-journal-list::-webkit-scrollbar-thumb {
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: #53647c;
+  background-clip: padding-box;
+}
+
+.connection-journal-list::-webkit-scrollbar-thumb:hover {
+  background: #84d6c2;
+  background-clip: padding-box;
 }
 
 .connection-journal-list li {
