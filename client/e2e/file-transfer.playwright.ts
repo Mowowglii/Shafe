@@ -15,6 +15,16 @@ test("returns to setup when joining a nonexistent room", async ({ page }) => {
     await expect(page.locator("#app-shell")).toHaveCSS("visibility", "hidden");
     await expect(introReveal).toHaveCount(0, { timeout: 5_000 });
     await expect(page.locator("#app-shell")).toHaveCSS("visibility", "visible");
+    const ambientBackground = page.locator("#ambient-background");
+    await expect.poll(() => ambientBackground.evaluate((canvas) => (canvas as HTMLCanvasElement).width))
+        .toBeGreaterThan(0);
+    await expect(ambientBackground).toHaveCSS("pointer-events", "none");
+    await expect.poll(() => ambientBackground.evaluate((canvas) => {
+        const context = (canvas as HTMLCanvasElement).getContext("2d");
+        return context?.getImageData(0, 0, canvas.width, canvas.height).data.some(
+            (value, index) => index % 4 === 3 && value > 0,
+        ) ?? false;
+    })).toBe(true);
     await page.getByRole("textbox", { name: "Room ID" }).fill(roomId);
     await page.getByRole("button", { name: "Join room" }).click();
 

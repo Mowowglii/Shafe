@@ -1,10 +1,13 @@
 import { ConnectionManager, type ConnectionRole } from "./connectionmanager.js";
 import type { FileTransferResponse } from "./types/filehandling.js";
 import type { ReceivedFile } from "./webrtc/filetransfer.manager.js";
+import { initializeAmbientBackground } from "./ui/ambient-background.js";
 import "@fontsource-variable/inter";
 import "./style.css";
 
 type RoomResponse = { roomId: string; role: string };
+
+initializeAmbientBackground();
 
 const introReveal = document.getElementById("intro-reveal");
 const introExitDoor = introReveal?.querySelector(".intro-door--right");
