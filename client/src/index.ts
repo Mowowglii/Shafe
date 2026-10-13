@@ -14,6 +14,7 @@ const joinRoomForm = getElement<HTMLFormElement>("join-room-form");
 const roomIdInput = getElement<HTMLInputElement>("room-id-input");
 const currentRoomId = getElement<HTMLElement>("current-room-id");
 const connectionStatus = getElement<HTMLElement>("connection-status");
+const connectionJournalList = getElement<HTMLOListElement>("connection-journal-list");
 const fileInput = getElement<HTMLInputElement>("file-input");
 const sendFileButton = getElement<HTMLButtonElement>("send-file-btn");
 const transferList = getElement<HTMLElement>("transfer-list");
@@ -31,6 +32,7 @@ type TransferRow = {
     label: HTMLElement;
     status: HTMLElement;
     cancel: HTMLButtonElement | null;
+    journalAnnounced: boolean;
 }
 const transferRows = new Map<string, TransferRow>();
 const receivedObjectUrls: string[] = [];
@@ -119,6 +121,7 @@ async function startConnection(roomId: string, role: ConnectionRole): Promise<vo
     peerConnected = false;
     dataChannelOpen = false;
     clearTransferRows();
+    connectionJournalList.replaceChildren();
     currentRoomId.textContent = roomId;
     copyRoomIdStatus.textContent = "";
     peerDisconnectNotice.hidden = true;
@@ -196,7 +199,10 @@ async function startConnection(roomId: string, role: ConnectionRole): Promise<vo
         row.progress.max = Math.max(detail.totalChunks, 1);
         row.progress.value = detail.receivedChunks;
         row.status.textContent = `Receiving ${detail.fileName}…`;
-        setStatus(`Receiving ${detail.fileName}…`);
+        if (!row.journalAnnounced) {
+            row.journalAnnounced = true;
+            setStatus(`Receiving ${detail.fileName}…`);
+        }
     });
     connectionManager.addEventListener("file-transfer-cancelled", (event) => {
         const detail = (event as CustomEvent<Extract<FileTransferResponse, { type: "file-transfer-cancelled" }>>).detail;
@@ -231,6 +237,7 @@ async function startConnection(roomId: string, role: ConnectionRole): Promise<vo
             downloadLink.cloneNode(true),
         );
         row.status.textContent = `Received ${file.metadata.fileName}`;
+        setStatus(`Received ${file.metadata.fileName}`);
     });
 }
 
@@ -315,7 +322,7 @@ function createTransferRow(transferId: string, fileName: string, direction: "sen
         container.append(cancel);
     }
     transferList.append(container);
-    const row = { container, progress, complete, label, status, cancel };
+    const row = { container, progress, complete, label, status, cancel, journalAnnounced: direction === "send" };
     transferRows.set(transferId, row);
     return row;
 }
@@ -391,6 +398,20 @@ function updateSendFileButton(): void {
 }
 
 function setStatus(message: string): void {
+    const lastEntry = connectionJournalList.lastElementChild;
+    if (lastEntry?.getAttribute("data-message") !== message) {
+        const item = document.createElement("li");
+        item.dataset.message = message;
+        const timestamp = new Date();
+        const time = document.createElement("time");
+        time.dateTime = timestamp.toISOString();
+        time.textContent = timestamp.toLocaleTimeString();
+        item.append(time, document.createTextNode(message));
+        connectionJournalList.append(item);
+        if (connectionJournalList.childElementCount > 100) {
+            connectionJournalList.firstElementChild?.remove();
+        }
+    }
     connectionStatus.textContent = message;
 }
 

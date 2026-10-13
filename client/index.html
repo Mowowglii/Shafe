@@ -26,18 +26,26 @@
 
       <section id="transfer-view" aria-labelledby="transfer-title" hidden>
         <h2 id="transfer-title">Transfer room</h2>
-        <div class="room-id-row">
-          <p>Room ID: <code id="current-room-id"></code></p>
-          <button id="copy-room-id-btn" type="button" aria-label="Copy room ID">Copy ID</button>
+        <div class="transfer-layout">
+          <div class="transfer-main">
+            <div class="room-id-row">
+              <p>Room ID: <code id="current-room-id"></code></p>
+              <button id="copy-room-id-btn" type="button" aria-label="Copy room ID">Copy ID</button>
+            </div>
+            <p id="copy-room-id-status" role="status" aria-live="polite"></p>
+            <p id="peer-disconnect-notice" role="alert" hidden></p>
+            <label for="file-input">Choose one or more files</label>
+            <input id="file-input" type="file" multiple />
+            <button id="send-file-btn" type="button" disabled>Send file</button>
+            <button id="leave-room-btn" type="button">Leave room</button>
+            <ul id="transfer-list" class="transfer-list" aria-label="File transfers"></ul>
+          </div>
+          <aside class="connection-journal" aria-labelledby="connection-journal-title">
+            <h3 id="connection-journal-title">Connection journal</h3>
+            <p id="connection-status" role="status" aria-live="polite">Connecting…</p>
+            <ol id="connection-journal-list" class="connection-journal-list" aria-label="Connection history"></ol>
+          </aside>
         </div>
-        <p id="copy-room-id-status" role="status" aria-live="polite"></p>
-        <p id="connection-status" role="status" aria-live="polite">Connecting…</p>
-        <p id="peer-disconnect-notice" role="alert" hidden></p>
-        <label for="file-input">Choose one or more files</label>
-        <input id="file-input" type="file" multiple />
-        <button id="send-file-btn" type="button" disabled>Send file</button>
-        <button id="leave-room-btn" type="button">Leave room</button>
-        <ul id="transfer-list" class="transfer-list" aria-label="File transfers"></ul>
       </section>
 
       <p id="app-error" role="alert" hidden></p>

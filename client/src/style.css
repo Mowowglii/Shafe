@@ -11,7 +11,7 @@ body {
 
 main {
   box-sizing: border-box;
-  width: min(100% - 2rem, 42rem);
+  width: min(100% - 2rem, 68rem);
   margin: 4rem auto;
   padding: 2rem;
   border: 1px solid #34445d;
@@ -31,6 +31,72 @@ h1 {
 section {
   display: grid;
   gap: 0.8rem;
+}
+
+#setup-view {
+  max-width: 42rem;
+}
+
+.transfer-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(17rem, 0.65fr);
+  align-items: start;
+  gap: 1.25rem;
+}
+
+.transfer-main {
+  display: grid;
+  min-width: 0;
+  gap: 0.8rem;
+}
+
+.connection-journal {
+  position: sticky;
+  top: 1rem;
+  display: grid;
+  max-height: 36rem;
+  min-width: 0;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 0.6rem;
+  padding: 1rem;
+  border: 1px solid #34445d;
+  border-radius: 0.8rem;
+  background: #101827;
+}
+
+.connection-journal h3 {
+  margin: 0;
+  color: #84d6c2;
+}
+
+#connection-status {
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+  border-left: 3px solid #38bdf8;
+  border-radius: 0.3rem;
+  background: #182438;
+  overflow-wrap: anywhere;
+}
+
+.connection-journal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0 0.25rem 0 1.5rem;
+  color: #b7c5d8;
+}
+
+.connection-journal-list li {
+  padding-left: 0.2rem;
+  overflow-wrap: anywhere;
+}
+
+.connection-journal-list time {
+  display: block;
+  color: #8292a8;
+  font-size: 0.78rem;
 }
 
 form {
@@ -181,6 +247,17 @@ code {
 
 [role="alert"] {
   color: #ff9b9b;
+}
+
+@media (max-width: 760px) {
+  .transfer-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .connection-journal {
+    position: static;
+    max-height: 20rem;
+  }
 }
 
 #leave-room-btn {
