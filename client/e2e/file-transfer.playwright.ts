@@ -16,6 +16,8 @@ test("creates a room, connects two peers, closes signaling, then transfers a fil
         await expect(sender.locator(".app-logo")).toBeVisible();
         await expect.poll(() => sender.locator(".app-logo").evaluate((image) => (image as HTMLImageElement).naturalWidth))
             .toBeGreaterThan(0);
+        await expect.poll(() => sender.locator(".app-logo").evaluate((image) => image.getBoundingClientRect().width))
+            .toBe(84);
         const setupShellWidth = await sender.locator("#app-shell").evaluate((shell) => shell.getBoundingClientRect().width);
         await sender.getByRole("button", { name: "Create a room" }).click();
         const roomIdElement = sender.locator("#current-room-id");
