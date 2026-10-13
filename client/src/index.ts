@@ -142,7 +142,7 @@ async function startConnection(roomId: string, role: ConnectionRole): Promise<vo
     peerDisconnectNotice.textContent = "";
     setupView.hidden = true;
     transferView.hidden = false;
-    appShell.className = "app-shell--transfer";
+    appShell.className = "app-shell app-shell--transfer";
     setStatus("Connecting to the signaling server…");
 
     connectionManager.addEventListener("signaling-open", () => {
@@ -367,7 +367,7 @@ function returnToSetup(): void {
     setStatus("Disconnected");
     transferView.hidden = true;
     setupView.hidden = false;
-    appShell.className = "app-shell--setup";
+    appShell.className = "app-shell app-shell--setup";
     setSetupBusy(false);
 }
 
