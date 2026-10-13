@@ -77,7 +77,7 @@ body {
   top: 50%;
   left: 50%;
   display: grid;
-  width: clamp(9rem, 25vw, 13rem);
+  width: clamp(10rem, 28vw, 16rem);
   aspect-ratio: 1;
   place-items: center;
   border: 1px solid #597260;
@@ -89,8 +89,8 @@ body {
 }
 
 .intro-logo {
-  width: 72%;
-  height: 72%;
+  width: 84%;
+  height: 84%;
   object-fit: contain;
 }
 
