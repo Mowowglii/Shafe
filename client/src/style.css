@@ -1,7 +1,7 @@
 :root {
   color: #e8eee8;
   background: #18231f;
-  font: 16px/1.5 system-ui, sans-serif;
+  font: 16px/1.5 "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 body {
