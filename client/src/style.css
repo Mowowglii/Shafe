@@ -64,9 +64,65 @@ section {
   background: #101827;
 }
 
+.connection-journal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
 .connection-journal h3 {
   margin: 0;
   color: #84d6c2;
+}
+
+.journal-toggle {
+  display: grid;
+  width: 2.25rem;
+  min-height: 2.25rem;
+  flex: 0 0 auto;
+  place-items: center;
+  padding: 0.35rem;
+  border: 1px solid #40546c;
+  border-radius: 50%;
+  color: #b7c5d8;
+  background: linear-gradient(145deg, #1b2a40, #101827);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 22%);
+  transition: border-color 160ms ease, color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+.journal-toggle:hover {
+  transform: translateY(-1px);
+  border-color: #84d6c2;
+  color: #84d6c2;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 30%);
+}
+
+.journal-toggle:focus-visible {
+  outline: 2px solid #84d6c2;
+  outline-offset: 3px;
+}
+
+.journal-toggle svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+  transition: transform 180ms ease;
+}
+
+.journal-toggle[aria-expanded="false"] svg {
+  transform: rotate(-90deg);
+}
+
+.connection-journal-content {
+  display: grid;
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 0.6rem;
 }
 
 #connection-status {

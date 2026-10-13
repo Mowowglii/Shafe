@@ -48,6 +48,12 @@ test("creates a room, connects two peers, closes signaling, then transfers a fil
         await expect(receiver.locator("#connection-status")).toHaveText(readyStatus, { timeout: 60_000 });
         await expect(sender.getByRole("button", { name: "Send file" })).toBeEnabled();
         await expect(sender.locator("#connection-journal-title")).toBeVisible();
+        const journalToggle = sender.getByRole("button", { name: "Hide connection events" });
+        await journalToggle.click();
+        await expect(sender.locator("#connection-journal-content")).toBeHidden();
+        await expect(sender.getByRole("button", { name: "Show connection events" })).toHaveAttribute("aria-expanded", "false");
+        await sender.getByRole("button", { name: "Show connection events" }).click();
+        await expect(sender.locator("#connection-journal-content")).toBeVisible();
         await expect(sender.locator("#app-error")).toBeHidden();
 
         await receiver.locator("#connection-status").evaluate((element) => {

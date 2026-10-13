@@ -41,9 +41,19 @@
             <ul id="transfer-list" class="transfer-list" aria-label="File transfers"></ul>
           </div>
           <aside class="connection-journal" aria-labelledby="connection-journal-title">
-            <h3 id="connection-journal-title">Connection journal</h3>
-            <p id="connection-status" role="status" aria-live="polite">Connecting…</p>
-            <ol id="connection-journal-list" class="connection-journal-list" aria-label="Connection history"></ol>
+            <div class="connection-journal-header">
+              <h3 id="connection-journal-title">Connection Events</h3>
+              <button id="toggle-connection-events-btn" class="journal-toggle" type="button"
+                aria-expanded="true" aria-controls="connection-journal-content" aria-label="Hide connection events">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
+              </button>
+            </div>
+            <div id="connection-journal-content" class="connection-journal-content">
+              <p id="connection-status" role="status" aria-live="polite">Connecting…</p>
+              <ol id="connection-journal-list" class="connection-journal-list" aria-label="Connection history"></ol>
+            </div>
           </aside>
         </div>
       </section>

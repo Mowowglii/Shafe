@@ -15,6 +15,8 @@ const roomIdInput = getElement<HTMLInputElement>("room-id-input");
 const currentRoomId = getElement<HTMLElement>("current-room-id");
 const connectionStatus = getElement<HTMLElement>("connection-status");
 const connectionJournalList = getElement<HTMLOListElement>("connection-journal-list");
+const connectionJournalContent = getElement<HTMLElement>("connection-journal-content");
+const toggleConnectionEventsButton = getElement<HTMLButtonElement>("toggle-connection-events-btn");
 const fileInput = getElement<HTMLInputElement>("file-input");
 const sendFileButton = getElement<HTMLButtonElement>("send-file-btn");
 const transferList = getElement<HTMLElement>("transfer-list");
@@ -36,6 +38,17 @@ type TransferRow = {
 }
 const transferRows = new Map<string, TransferRow>();
 const receivedObjectUrls: string[] = [];
+
+toggleConnectionEventsButton.addEventListener("click", () => {
+    const expanded = toggleConnectionEventsButton.getAttribute("aria-expanded") === "true";
+    toggleConnectionEventsButton.setAttribute("aria-expanded", String(!expanded));
+    toggleConnectionEventsButton.setAttribute(
+        "aria-label",
+        expanded ? "Show connection events" : "Hide connection events",
+    );
+    toggleConnectionEventsButton.title = expanded ? "Show connection events" : "Hide connection events";
+    connectionJournalContent.hidden = expanded;
+});
 
 createRoomButton.addEventListener("click", () => {
     void createRoom();
